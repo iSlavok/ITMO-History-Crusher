@@ -1,0 +1,37 @@
+from aiogram import Router, F
+from aiogram.enums import ChatType
+from aiogram.filters import or_f, Command
+from aiogram.fsm.context import FSMContext
+from aiogram.types import CallbackQuery, Message
+
+from bot.enums import UserRole
+from bot.filters.role_filter import RoleFilter
+from bot.keyboards import get_main_kb
+
+
+def get_user_main_router() -> Router:
+    router = Router(name="user_main_router")
+
+    router.message.filter(F.chat.type == ChatType.PRIVATE)
+    router.message.filter(or_f(RoleFilter(UserRole.USER), RoleFilter(UserRole.ADMIN)))
+    router.callback_query.filter(or_f(RoleFilter(UserRole.USER), RoleFilter(UserRole.ADMIN)))
+
+    @router.message(
+        Command(commands=["start", "main", "cancel"]),
+    )
+    @router.callback_query(
+        F.data.in_({"main", "cancel"}),
+    )
+    async def main(event: Message | CallbackQuery, state: FSMContext):
+        if isinstance(event, CallbackQuery):
+            message = event.message
+            await event.answer()
+        else:
+            message = event
+        await message.answer(
+            text="Главное меню",
+            reply_markup=get_main_kb(),
+        )
+        await state.clear()
+
+    return router
