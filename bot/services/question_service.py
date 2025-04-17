@@ -12,7 +12,6 @@ from bot.services.exceptions import DateParsingError, QuestionNotFoundError
 
 
 class QuestionService:
-    DISTRACTOR_COUNT = 9  # Кол-во доп вариантов даты
     ANSWERS_HISTORY_LIMIT = 10  # Кол-во ответов для расчета веса
     BOOST_ANSWER_THRESHOLD = 10  # Порог кол-ва ответов для буста
     BOOST_LIMIT_FACTOR = 10.0  # Множитель для буста (10/k)
@@ -140,31 +139,33 @@ class QuestionService:
                                                          answer_id=text_answer_id)
         return answer
 
-    def generate_distractor_dates(self, answer: Answer) -> list[PartialDate]:
+    @staticmethod
+    def generate_distractor_dates(answer: Answer, user: User) -> list[PartialDate]:
+        distractor_count = user.suggested_answers_count-1
         user_date = answer.date
         correct_date = answer.question.correct_answer_date
 
-        years = [correct_date.year] * self.DISTRACTOR_COUNT
-        months = [correct_date.month] * self.DISTRACTOR_COUNT
-        days = [correct_date.day] * self.DISTRACTOR_COUNT
+        years = [correct_date.year] * distractor_count
+        months = [correct_date.month] * distractor_count
+        days = [correct_date.day] * distractor_count
 
         if correct_date.year != user_date.year:
             available_years = [year for year in range(correct_date.year - 5, correct_date.year + 6)]
             if ((correct_date.month is not None and correct_date.month != user_date.month)
                     or (correct_date.day is not None and correct_date.day != user_date.day)):
-                years = [random.choice(available_years) for _ in range(self.DISTRACTOR_COUNT)]
+                years = [random.choice(available_years) for _ in range(distractor_count)]
             else:
                 available_years.remove(correct_date.year)
                 if user_date.year in available_years:
                     available_years.remove(user_date.year)
-                years = random.sample(available_years, k=self.DISTRACTOR_COUNT)
+                years = random.sample(available_years, k=distractor_count)
 
         if correct_date.month is not None and correct_date.month != user_date.month:
             available_months = [month for month in range(1, 13)]
             if correct_date.day is not None and correct_date.day != user_date.day:
-                months = [random.choice(available_months) for _ in range(self.DISTRACTOR_COUNT)]
+                months = [random.choice(available_months) for _ in range(distractor_count)]
             else:
-                for i in range(self.DISTRACTOR_COUNT):
+                for i in range(distractor_count):
                     _available_months = available_months.copy()
                     if years[i] == correct_date.year:
                         _available_months.remove(correct_date.month)
@@ -176,7 +177,7 @@ class QuestionService:
                     months[i] = random.choice(_available_months)
 
         if correct_date.day is not None and correct_date.day != user_date.day:
-            for i in range(self.DISTRACTOR_COUNT):
+            for i in range(distractor_count):
                 available_days = [day for day in range(1, calendar.monthrange(years[i], months[i])[1] + 1)]
                 if years[i] == correct_date.year and months[i] == correct_date.month:
                     available_days.remove(correct_date.day)
@@ -189,7 +190,7 @@ class QuestionService:
 
         dates = [
             PartialDate(year=years[i], month=months[i], day=days[i])
-            for i in range(self.DISTRACTOR_COUNT)
+            for i in range(distractor_count)
         ]
         dates.append(correct_date)
         random.shuffle(dates)

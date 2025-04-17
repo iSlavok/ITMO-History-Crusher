@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 class Question(Base):
     text: Mapped[str] = mapped_column(nullable=False)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), nullable=False, index=True)
-    weight: Mapped[float] = mapped_column(Float, default=5.0, nullable=False, index=True)
+    weight: Mapped[float] = mapped_column(Float, default=10.0, nullable=False, index=True)
     answer_year: Mapped[int] = mapped_column(Integer, nullable=False)
     answer_month: Mapped[int | None] = mapped_column(Integer, nullable=True)
     answer_day: Mapped[int | None] = mapped_column(Integer, nullable=True)

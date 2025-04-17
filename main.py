@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 
 from aiogram import Bot, Dispatcher
@@ -9,7 +10,7 @@ from aiogram.types import BotCommand
 from redis.asyncio import Redis
 
 from bot.database import init_db
-from bot.handlers import get_user_main_router, get_create_question_router, get_test_router
+from bot.handlers import *
 from bot.middlewares import UserMiddleware
 
 
@@ -20,9 +21,10 @@ async def start_main_bot():
 
     dp.update.outer_middleware(UserMiddleware())
 
-    dp.include_router(get_user_main_router())
-    dp.include_router(get_create_question_router())
-    dp.include_router(get_test_router())
+    dp.include_router(user_main_router)
+    dp.include_router(create_question_router)
+    dp.include_router(test_router)
+    dp.include_router(user_settings_router)
 
     commands = [
         BotCommand(command="main", description="В главное меню"),
@@ -33,6 +35,10 @@ async def start_main_bot():
 
 
 async def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+    )
     init_db()
     await start_main_bot()
 

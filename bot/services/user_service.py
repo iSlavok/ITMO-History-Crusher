@@ -33,3 +33,10 @@ class UserService:
     @property
     def user(self) -> User:
         return self._user
+
+    def set_suggested_answers_count(self, count: int) -> User:
+        self._user.suggested_answers_count = count
+        self.session.commit()
+        self.session.refresh(self._user)
+        return self._user
+

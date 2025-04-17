@@ -6,3 +6,7 @@ class DateChoiceCD(CallbackData, prefix='date_choice'):
     year: int
     month: int | None
     day: int | None
+
+
+class SettingAnswerCountCD(CallbackData, prefix='setting_answer_count'):
+    count: int
