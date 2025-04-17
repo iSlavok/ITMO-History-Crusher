@@ -4,6 +4,7 @@ import re
 
 from sqlalchemy.orm import Session
 
+from bot.config import config
 from bot.enums import AnswerType
 from bot.models import Question, Answer, User
 from bot.repositories import AnswerRepository, QuestionRepository
@@ -12,11 +13,11 @@ from bot.services.exceptions import DateParsingError, QuestionNotFoundError
 
 
 class QuestionService:
-    ANSWERS_HISTORY_LIMIT = 10  # Кол-во ответов для расчета веса
-    BOOST_ANSWER_THRESHOLD = 10  # Порог кол-ва ответов для буста
-    BOOST_LIMIT_FACTOR = 10.0  # Множитель для буста (10/k)
-    MAX_WEIGHT_DURING_BOOST = 15.0  # Максимальный вес во время буста
-    MIN_FINAL_WEIGHT = 1.0  # Минимальный финальный вес
+    ANSWERS_HISTORY_LIMIT = config.answer_history_limit  # Кол-во ответов для расчета веса
+    BOOST_ANSWER_THRESHOLD = config.boost_answer_threshold  # Порог кол-ва ответов для буста
+    BOOST_LIMIT_FACTOR = config.boost_limit_factor  # Множитель для буста (10/k)
+    MAX_WEIGHT_DURING_BOOST = config.max_weight_during_boost  # Максимальный вес во время буста
+    MIN_FINAL_WEIGHT = config.min_final_weight  # Минимальный финальный вес
 
     def __init__(self, session: Session):
         self.session = session

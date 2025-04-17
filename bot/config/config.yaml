@@ -1,0 +1,5 @@
+answer_history_limit: 10
+boost_answer_threshold: 10
+boost_limit_factor: 10.0
+max_weight_during_boost:  15.0
+min_final_weight: 1.0

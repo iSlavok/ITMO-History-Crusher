@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
 from bot.callback_data import DateChoiceCD
+from bot.config import messages
 from bot.enums import UserRole, AnswerType
 from bot.filters.role_filter import RoleFilter
 from bot.keyboards import get_to_main_kb, get_distractors_kb
@@ -45,18 +46,15 @@ async def answer_input(message: Message, state: FSMContext, question_service: Qu
     try:
         answer = question_service.submit_user_text_answer(question_id=question_id, raw_user_input=answer_text)
     except DateParsingError:
-        return await message.answer("Неверный формат даты.")
+        return await message.answer(messages.errors.date_parsing_error)
     except QuestionNotFoundError:
-        return await message.answer("Вопрос не найден.")
+        return await message.answer(messages.errors.question_not_found)
     if answer.type == AnswerType.CORRECT:
-        await message.answer("Правильный ответ!")
+        await message.answer(messages.test.correct_text_answer)
         return await send_question(message=message, question_service=question_service, state=state, user=user)
     distractors = question_service.generate_distractor_dates(answer=answer, user=user)
-    await message.answer(
-        f"Неправильный ответ.\n"
-        f"Попробуйте еще раз, выбрав один из вариантов",
-        reply_markup=get_distractors_kb(distractors, answer_id=answer.id)
-    )
+    await message.answer(messages.test.incorrect_text_answer,
+                         reply_markup=get_distractors_kb(distractors, answer_id=answer.id))
     await state.set_state(Test.CHOICE_ANSWER)
     await state.update_data(answer_id=answer.id)
 
@@ -72,25 +70,25 @@ async def answer_choice(callback: CallbackQuery, callback_data: DateChoiceCD, st
         date = PartialDate(year=callback_data.year, month=callback_data.month, day=callback_data.day)
         answer = question_service.submit_user_choice_answer(text_answer_id=callback_data.answer_id, user_date=date)
     except DateParsingError:
-        return await callback.message.answer("Неверный формат даты.")
+        return await callback.message.answer(messages.errors.date_parsing_error)
     except QuestionNotFoundError:
-        return await callback.message.answer("Вопрос не найден.")
+        return await callback.message.answer(messages.errors.question_not_found)
     except AnswerNotFoundError:
-        return await callback.message.answer("Ответ не найден.")
+        return await callback.message.answer(messages.errors.answer_not_found)
     await callback.message.edit_reply_markup(reply_markup=None)
     if answer.type == AnswerType.PART:
-        await callback.message.answer("Правильный ответ!", reply_markup=get_to_main_kb())
+        await callback.message.answer(messages.test.correct_choice_answer, reply_markup=get_to_main_kb())
     else:
-        await callback.message.answer("Неправильный ответ.\n"
-                                      f"Правильный: {answer.question.correct_answer_date}",
-                                      reply_markup=get_to_main_kb())
+        await callback.message.answer(
+            messages.test.incorrect_choice_answer.format(correct_answer=answer.question.correct_answer_date),
+            reply_markup=get_to_main_kb())
     return await send_question(message=callback.message, question_service=question_service, state=state, user=user)
 
 
 async def send_question(message: Message, question_service: QuestionService, state: FSMContext, user: User):
     question = question_service.get_random_question(user)
     if not question:
-        return await message.answer("Вопросов нет")
-    await message.answer(text=question.text)
+        return await message.answer(messages.test.question_not_found)
+    await message.answer(text=messages.test.question.format(question_text=question.text))
     await state.update_data(question_id=question.id)
     await state.set_state(Test.TEXT_ANSWER)

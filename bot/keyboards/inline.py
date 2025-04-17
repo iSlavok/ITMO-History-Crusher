@@ -3,20 +3,23 @@ from typing import Iterable
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from bot.callback_data import DateChoiceCD, SettingAnswerCountCD
+from bot.config import messages
 from bot.schemas import PartialDate
+
+buttons = messages.buttons
 
 
 def get_main_kb():
     builder = InlineKeyboardBuilder()
-    builder.button(text="Создать вопрос", callback_data="create_question")
-    builder.button(text="Начать тест", callback_data="test")
-    builder.button(text="Настройки", callback_data="settings")
+    builder.button(text=buttons.create_question, callback_data="create_question")
+    builder.button(text=buttons.test, callback_data="test")
+    builder.button(text=buttons.settings, callback_data="settings")
     return builder.adjust(1).as_markup()
 
 
 def get_to_main_kb():
     builder = InlineKeyboardBuilder()
-    builder.button(text="В главное меню", callback_data="main")
+    builder.button(text=buttons.main, callback_data="main")
     return builder.adjust(1).as_markup()
 
 
@@ -30,15 +33,15 @@ def get_distractors_kb(distractors: Iterable[PartialDate], answer_id: int):
 
 def get_settings_kb():
     builder = InlineKeyboardBuilder()
-    builder.button(text="Изменить кол-во вариантов ответа", callback_data="setting_answer_count")
-    builder.button(text="В главное меню", callback_data="main")
+    builder.button(text=buttons.setting_answer_count, callback_data="setting_answer_count")
+    builder.button(text=buttons.main, callback_data="main")
     return builder.adjust(1).as_markup()
 
 
 def get_to_settings_kb():
     builder = InlineKeyboardBuilder()
-    builder.button(text="В настройки", callback_data="settings")
-    builder.button(text="В главное меню", callback_data="main")
+    builder.button(text=buttons.settings, callback_data="settings")
+    builder.button(text=buttons.main, callback_data="main")
     return builder.adjust(2).as_markup()
 
 
