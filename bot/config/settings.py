@@ -14,8 +14,13 @@ class Config(BaseModel):
 
 class Buttons(BaseModel):
     main: str
-    create_question: str
+    back: str
     test: str
+    questions: str
+    create_question: str
+    list_questions: str
+    delete_question: str
+    delete_confirm: str
     settings: str
     setting_answer_count: str
 
@@ -32,6 +37,17 @@ class CreateQuestionMessages(BaseModel):
     success_created: str
 
 
+class ListQuestionsMessages(BaseModel):
+    header: str
+    question: str
+
+
+class DeleteQuestionMessages(BaseModel):
+    id_request: str
+    delete_confirm: str
+    delete_success: str
+
+
 class TestMessages(BaseModel):
     question: str
     correct_text_answer: str
@@ -39,6 +55,13 @@ class TestMessages(BaseModel):
     correct_choice_answer: str
     incorrect_choice_answer: str
     question_not_found: str
+
+
+class QuestionsMessages(BaseModel):
+    questions_menu: str
+    create_question: CreateQuestionMessages
+    list_questions: ListQuestionsMessages
+    delete_question: DeleteQuestionMessages
 
 
 class SettingsMessages(BaseModel):
@@ -51,8 +74,8 @@ class Messages(BaseModel):
     main_menu: str
     buttons: Buttons
     errors: ErrorMessages
-    create_question: CreateQuestionMessages
     test: TestMessages
+    questions: QuestionsMessages
     settings: SettingsMessages
 
 

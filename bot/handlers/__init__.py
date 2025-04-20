@@ -1,12 +1,12 @@
 from .user_main_handler import router as user_main_router
-from .create_question_handler import router as create_question_router
+from .questions import questions_router
 from .test_handler import router as test_router
 from .user_settings_handler import router as user_settings_router
 from .create_public_question_handler import router as create_public_question_router
 
 __all__ = [
     "user_main_router",
-    "create_question_router",
+    "questions_router",
     "test_router",
     "user_settings_router",
     "create_public_question_router",

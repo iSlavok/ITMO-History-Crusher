@@ -2,8 +2,9 @@ import asyncio
 import logging
 import os
 
-from aiogram import Bot, Dispatcher
+from aiogram import Bot, Dispatcher, F
 from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ChatType
 from aiogram.fsm.storage.base import DefaultKeyBuilder
 from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.types import BotCommand
@@ -11,7 +12,7 @@ from redis.asyncio import Redis
 
 from bot.database import init_db
 from bot.handlers import *
-from bot.middlewares import UserMiddleware
+from bot.middlewares import UserMiddleware, ServicesMiddleware
 
 
 async def start_main_bot():
@@ -19,10 +20,14 @@ async def start_main_bot():
     storage = RedisStorage(Redis(), key_builder=DefaultKeyBuilder(with_destiny=True, with_bot_id=True))
     dp = Dispatcher(storage=storage)
 
+    dp.message.filter(F.chat.type == ChatType.PRIVATE)
+
     dp.update.outer_middleware(UserMiddleware())
+    dp.message.middleware.register(ServicesMiddleware())
+    dp.callback_query.middleware.register(ServicesMiddleware())
 
     dp.include_router(user_main_router)
-    dp.include_router(create_question_router)
+    dp.include_router(questions_router)
     dp.include_router(test_router)
     dp.include_router(user_settings_router)
     dp.include_router(create_public_question_router)

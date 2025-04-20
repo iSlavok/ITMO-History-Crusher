@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session, aliased
 
 from bot.repositories import BaseRepository
 from bot.models import Question, User
+from bot.repositories.base_repository import ModelType
 
 
 class QuestionRepository(BaseRepository[Question]):
@@ -42,3 +43,30 @@ class QuestionRepository(BaseRepository[Question]):
         )
 
         return self.session.scalars(statement).all()
+
+    def get_user_questions(self, user: User, skip: int = 0, limit: int = 100) -> Sequence[Question]:
+        statement = (
+            select(self.model)
+            .where(self.model.user == user)
+            .order_by(self.model.id)
+            .offset(skip)
+            .limit(limit)
+        )
+        return self.session.scalars(statement).all()
+
+    def get_user_questions_count(self, user: User) -> int:
+        statement = (
+            select(func.count(self.model.id))
+            .where(self.model.user == user)
+        )
+        return self.session.scalar(statement) or 0
+
+    def get_by_id_and_user(self, question_id: int, user: User) -> Question | None:
+        statement = (
+            select(self.model)
+            .where(
+                self.model.id == question_id,
+                self.model.user == user
+            )
+        )
+        return self.session.scalar(statement)

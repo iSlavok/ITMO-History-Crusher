@@ -11,8 +11,8 @@ buttons = messages.buttons
 
 def get_main_kb():
     builder = InlineKeyboardBuilder()
-    builder.button(text=buttons.create_question, callback_data="create_question")
     builder.button(text=buttons.test, callback_data="test")
+    builder.button(text=buttons.questions, callback_data="questions")
     builder.button(text=buttons.settings, callback_data="settings")
     return builder.adjust(1).as_markup()
 

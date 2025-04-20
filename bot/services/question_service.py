@@ -1,6 +1,7 @@
 import calendar
 import random
 import re
+from typing import Sequence
 
 from sqlalchemy.orm import Session
 
@@ -257,5 +258,25 @@ class QuestionService:
         question = PublicQuestion(text=text)
         question.correct_answer_date = correct_answer_date
         self.public_question_repo.add(question)
+        self.session.commit()
+        return question
+
+    def get_questions(self, user: User, page: int = 1, limit: int = 10) -> Sequence[Question]:
+        return self.question_repo.get_user_questions(user=user, skip=(page - 1) * limit, limit=limit)
+
+    def get_questions_count(self, user: User) -> int:
+        return self.question_repo.get_user_questions_count(user=user)
+
+    def get_question_by_id(self, question_id: int, user: User) -> Question:
+        question = self.question_repo.get_by_id_and_user(question_id, user)
+        if question is None:
+            raise QuestionNotFoundError
+        return question
+
+    def delete_question(self, question_id: int, user: User) -> Question:
+        question = self.question_repo.get_by_id_and_user(question_id, user)
+        if question is None:
+            raise QuestionNotFoundError
+        self.question_repo.delete(question)
         self.session.commit()
         return question

@@ -1,5 +1,4 @@
 from aiogram import Router, F
-from aiogram.enums import ChatType
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
@@ -8,16 +7,13 @@ from bot.config import messages
 from bot.enums import UserRole
 from bot.filters import RoleFilter
 from bot.keyboards import get_to_main_kb
-from bot.middlewares import ServicesMiddleware
 from bot.services import QuestionService
 from bot.services.exceptions import DateParsingError
 from bot.states import CreatePublicQuestion
 
 router = Router(name="create_public_question_router")
 
-router.message.filter(F.chat.type == ChatType.PRIVATE)
 router.message.filter(RoleFilter(UserRole.ADMIN))
-router.message.middleware.register(ServicesMiddleware())
 
 
 @router.message(Command("create_public_question"))

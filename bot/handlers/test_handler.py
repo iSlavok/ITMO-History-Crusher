@@ -1,7 +1,6 @@
 from typing import cast
 
 from aiogram import Router, F
-from aiogram.enums import ChatType
 from aiogram.filters import or_f
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
@@ -11,7 +10,6 @@ from bot.config import messages
 from bot.enums import UserRole, AnswerType
 from bot.filters import RoleFilter
 from bot.keyboards import get_to_main_kb, get_distractors_kb
-from bot.middlewares import ServicesMiddleware
 from bot.models import User, PublicQuestion, Question
 from bot.schemas import PartialDate
 from bot.services import QuestionService
@@ -20,11 +18,8 @@ from bot.states import Test
 
 router = Router(name="test_router")
 
-router.message.filter(F.chat.type == ChatType.PRIVATE)
 router.message.filter(or_f(RoleFilter(UserRole.USER), RoleFilter(UserRole.ADMIN)))
 router.callback_query.filter(or_f(RoleFilter(UserRole.USER), RoleFilter(UserRole.ADMIN)))
-router.message.middleware.register(ServicesMiddleware())
-router.callback_query.middleware.register(ServicesMiddleware())
 
 
 @router.callback_query(

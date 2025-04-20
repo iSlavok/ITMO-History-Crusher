@@ -19,7 +19,11 @@ class Question(Base):
     answer_day: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     user: Mapped["User"] = relationship("User", back_populates="questions")
-    answers: Mapped[list["Answer"]] = relationship("Answer", back_populates="question")
+    answers: Mapped[list["Answer"]] = relationship(
+        "Answer",
+        back_populates="question",
+        cascade="all, delete-orphan",
+    )
 
     @property
     def correct_answer_date(self) -> PartialDate:

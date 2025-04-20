@@ -1,5 +1,4 @@
 from aiogram import Router, F
-from aiogram.enums import ChatType
 from aiogram.filters import or_f
 from aiogram.types import CallbackQuery
 
@@ -13,7 +12,6 @@ from bot.services import UserService
 
 router = Router(name="user_settings_router")
 
-router.message.filter(F.chat.type == ChatType.PRIVATE)
 router.callback_query.filter(or_f(RoleFilter(UserRole.USER), RoleFilter(UserRole.ADMIN)))
 
 
