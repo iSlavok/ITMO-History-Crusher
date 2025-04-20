@@ -25,6 +25,7 @@ async def start_main_bot():
     dp.include_router(create_question_router)
     dp.include_router(test_router)
     dp.include_router(user_settings_router)
+    dp.include_router(create_public_question_router)
 
     commands = [
         BotCommand(command="main", description="В главное меню"),

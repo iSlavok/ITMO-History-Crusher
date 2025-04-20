@@ -6,7 +6,7 @@ from aiogram.types import CallbackQuery, Message
 
 from bot.config import messages
 from bot.enums import UserRole
-from bot.filters.role_filter import RoleFilter
+from bot.filters import RoleFilter
 from bot.keyboards import get_main_kb
 
 router = Router(name="user_main_router")

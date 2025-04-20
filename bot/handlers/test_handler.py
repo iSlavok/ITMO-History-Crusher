@@ -9,14 +9,14 @@ from aiogram.types import CallbackQuery, Message
 from bot.callback_data import DateChoiceCD
 from bot.config import messages
 from bot.enums import UserRole, AnswerType
-from bot.filters.role_filter import RoleFilter
+from bot.filters import RoleFilter
 from bot.keyboards import get_to_main_kb, get_distractors_kb
 from bot.middlewares import ServicesMiddleware
 from bot.models import User, PublicQuestion, Question
 from bot.schemas import PartialDate
 from bot.services import QuestionService
 from bot.services.exceptions import DateParsingError, QuestionNotFoundError, AnswerNotFoundError
-from bot.states.user_states import Test
+from bot.states import Test
 
 router = Router(name="test_router")
 

@@ -6,7 +6,7 @@ from aiogram.types import CallbackQuery
 from bot.callback_data import SettingAnswerCountCD
 from bot.config import messages
 from bot.enums import UserRole
-from bot.filters.role_filter import RoleFilter
+from bot.filters import RoleFilter
 from bot.keyboards import get_settings_kb, get_settings_answer_count_kb, get_to_settings_kb
 from bot.models import User
 from bot.services import UserService
