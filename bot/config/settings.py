@@ -19,10 +19,13 @@ class Buttons(BaseModel):
     questions: str
     create_question: str
     list_questions: str
+    list_public_questions: str
     delete_question: str
     delete_confirm: str
     settings: str
     setting_answer_count: str
+    enable_public_questions: str
+    disable_public_questions: str
 
 
 class ErrorMessages(BaseModel):
@@ -61,6 +64,7 @@ class QuestionsMessages(BaseModel):
     questions_menu: str
     create_question: CreateQuestionMessages
     list_questions: ListQuestionsMessages
+    list_public_questions: ListQuestionsMessages
     delete_question: DeleteQuestionMessages
 
 

@@ -40,3 +40,8 @@ class UserService:
         self.session.refresh(self._user)
         return self._user
 
+    def set_enable_public_questions(self, enable: bool) -> User:
+        self._user.enable_public_questions = enable
+        self.session.commit()
+        self.session.refresh(self._user)
+        return self._user

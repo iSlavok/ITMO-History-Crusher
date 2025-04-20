@@ -2,7 +2,7 @@ from typing import Iterable
 
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from bot.callback_data import DateChoiceCD, SettingAnswerCountCD
+from bot.callback_data import DateChoiceCD, SettingAnswerCountCD, EnablePublicQuestions
 from bot.config import messages
 from bot.schemas import PartialDate
 
@@ -32,9 +32,13 @@ def get_distractors_kb(distractors: Iterable[PartialDate], answer_id: int, is_pu
     return builder.adjust(2).as_markup()
 
 
-def get_settings_kb():
+def get_settings_kb(enabled_public_questions: bool):
     builder = InlineKeyboardBuilder()
     builder.button(text=buttons.setting_answer_count, callback_data="setting_answer_count")
+    if enabled_public_questions:
+        builder.button(text=buttons.disable_public_questions, callback_data=EnablePublicQuestions(enable=False))
+    else:
+        builder.button(text=buttons.enable_public_questions, callback_data=EnablePublicQuestions(enable=True))
     builder.button(text=buttons.main, callback_data="main")
     return builder.adjust(1).as_markup()
 

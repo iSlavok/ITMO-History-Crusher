@@ -33,10 +33,12 @@ class QuestionService:
         if not user_questions:
             return None
         user_questions_weights = [question.weight for question in user_questions]
-        public_questions = self.public_question_repo.list_all(limit=1000)
-        questions = list(user_questions) + list(public_questions)
-        weights = user_questions_weights + [10] * len(public_questions)
-        return random.choices(questions, weights=weights, k=1)[0]
+        if user.enable_public_questions:
+            public_questions = self.public_question_repo.list_all(limit=1000)
+            questions = list(user_questions) + list(public_questions)
+            weights = user_questions_weights + [10] * len(public_questions)
+            return random.choices(questions, weights=weights, k=1)[0]
+        return random.choices(user_questions, weights=user_questions_weights, k=1)[0]
 
     @staticmethod
     def parse_date_string(raw_string: str) -> PartialDate:
@@ -264,8 +266,14 @@ class QuestionService:
     def get_questions(self, user: User, page: int = 1, limit: int = 10) -> Sequence[Question]:
         return self.question_repo.get_user_questions(user=user, skip=(page - 1) * limit, limit=limit)
 
+    def get_public_questions(self, page: int = 1, limit: int = 10) -> Sequence[PublicQuestion]:
+        return self.public_question_repo.list_all(skip=(page - 1) * limit, limit=limit)
+
     def get_questions_count(self, user: User) -> int:
         return self.question_repo.get_user_questions_count(user=user)
+
+    def get_public_questions_count(self) -> int:
+        return self.public_question_repo.get_public_questions_count()
 
     def get_question_by_id(self, question_id: int, user: User) -> Question:
         question = self.question_repo.get_by_id_and_user(question_id, user)

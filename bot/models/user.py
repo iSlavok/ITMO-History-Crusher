@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from sqlalchemy import BigInteger, String, Enum, Integer
+from sqlalchemy import BigInteger, String, Enum, Integer, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from bot.database import Base
@@ -19,7 +19,8 @@ class User(Base):
         nullable=False,
         default=UserRole.USER
     )
-    suggested_answers_count: Mapped[int] = mapped_column(Integer, nullable=False, default=4, server_default="4")
+    suggested_answers_count: Mapped[int] = mapped_column(Integer, nullable=False, default=4)
+    enable_public_questions: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     questions: Mapped[list["Question"]] = relationship(
         "Question",

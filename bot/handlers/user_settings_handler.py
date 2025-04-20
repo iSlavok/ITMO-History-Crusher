@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.filters import or_f
 from aiogram.types import CallbackQuery
 
-from bot.callback_data import SettingAnswerCountCD
+from bot.callback_data import SettingAnswerCountCD, EnablePublicQuestions
 from bot.config import messages
 from bot.enums import UserRole
 from bot.filters import RoleFilter
@@ -17,8 +17,11 @@ router.callback_query.filter(or_f(RoleFilter(UserRole.USER), RoleFilter(UserRole
 
 @router.callback_query(F.data == "settings")
 async def open_settings(callback: CallbackQuery, user: User):
-    await callback.message.answer(messages.settings.settings_menu.format(answers_count=user.suggested_answers_count),
-                                  reply_markup=get_settings_kb())
+    await callback.message.answer(
+        messages.settings.settings_menu.format(
+            answers_count=user.suggested_answers_count,
+            public_status="✅ Включено" if user.enable_public_questions else "❌ Выключено"
+        ), reply_markup=get_settings_kb(enabled_public_questions=user.enable_public_questions))
     await callback.answer()
 
 
@@ -34,4 +37,16 @@ async def set_answer_count(callback: CallbackQuery, callback_data: SettingAnswer
     user_service.set_suggested_answers_count(count)
     await callback.message.answer(messages.settings.answer_count_success.format(count=count),
                                   reply_markup=get_to_settings_kb())
+    await callback.answer()
+
+
+@router.callback_query(EnablePublicQuestions.filter())
+async def enable_public_questions(callback: CallbackQuery, callback_data: EnablePublicQuestions,
+                                  user_service: UserService):
+    user = user_service.set_enable_public_questions(enable=callback_data.enable)
+    await callback.message.edit_text(
+        messages.settings.settings_menu.format(
+            answers_count=user.suggested_answers_count,
+            public_status="✅ Включено" if user.enable_public_questions else "❌ Выключено"
+        ), reply_markup=get_settings_kb(enabled_public_questions=user.enable_public_questions))
     await callback.answer()
