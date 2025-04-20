@@ -7,7 +7,7 @@ from bot.database import Base
 from bot.enums import UserRole
 
 if TYPE_CHECKING:
-    from . import Question
+    from . import Question, PublicAnswer
 
 
 class User(Base):
@@ -21,4 +21,13 @@ class User(Base):
     )
     suggested_answers_count: Mapped[int] = mapped_column(Integer, nullable=False, default=4, server_default="4")
 
-    questions: Mapped[list["Question"]] = relationship("Question", back_populates="user")
+    questions: Mapped[list["Question"]] = relationship(
+        "Question",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )
+    public_answers: Mapped[list["PublicAnswer"]] = relationship(
+        "PublicAnswer",
+        back_populates="user",
+        cascade="all, delete-orphan"
+    )

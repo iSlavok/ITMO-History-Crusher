@@ -6,29 +6,35 @@ from sqlalchemy.orm import Session
 
 from bot.config import config
 from bot.enums import AnswerType
-from bot.models import Question, Answer, User
-from bot.repositories import AnswerRepository, QuestionRepository
+from bot.models import Question, Answer, User, PublicQuestion, PublicAnswer
+from bot.repositories import AnswerRepository, QuestionRepository, PublicQuestionRepository, PublicAnswerRepository
 from bot.schemas import PartialDate
-from bot.services.exceptions import DateParsingError, QuestionNotFoundError
+from bot.services.exceptions import DateParsingError, QuestionNotFoundError, AnswerNotFoundError
+
+ANSWERS_HISTORY_LIMIT = config.answer_history_limit
+BOOST_ANSWER_THRESHOLD = config.boost_answer_threshold
+BOOST_LIMIT_FACTOR = config.boost_limit_factor
+MAX_WEIGHT_DURING_BOOST = config.max_weight_during_boost
+MIN_FINAL_WEIGHT = config.min_final_weight
 
 
 class QuestionService:
-    ANSWERS_HISTORY_LIMIT = config.answer_history_limit  # Кол-во ответов для расчета веса
-    BOOST_ANSWER_THRESHOLD = config.boost_answer_threshold  # Порог кол-ва ответов для буста
-    BOOST_LIMIT_FACTOR = config.boost_limit_factor  # Множитель для буста (10/k)
-    MAX_WEIGHT_DURING_BOOST = config.max_weight_during_boost  # Максимальный вес во время буста
-    MIN_FINAL_WEIGHT = config.min_final_weight  # Минимальный финальный вес
-
-    def __init__(self, session: Session):
+    def __init__(self, session: Session, question_repo: QuestionRepository, answer_repo: AnswerRepository,
+                 public_question_repo: PublicQuestionRepository, public_answer_repo: PublicAnswerRepository):
         self.session = session
-        self.question_repo = QuestionRepository(session)
-        self.answer_repo = AnswerRepository(session)
+        self.question_repo = question_repo
+        self.answer_repo = answer_repo
+        self.public_question_repo = public_question_repo
+        self.public_answer_repo = public_answer_repo
 
-    def get_random_question(self, user: User) -> Question | None:
-        questions = self.question_repo.get_prioritized_questions(user=user)
-        if not questions:
+    def get_random_question(self, user: User) -> Question | PublicQuestion | None:
+        user_questions = self.question_repo.get_prioritized_questions(user=user)
+        if not user_questions:
             return None
-        weights = [question.weight for question in questions]
+        user_questions_weights = [question.weight for question in user_questions]
+        public_questions = self.public_question_repo.list_all(limit=1000)
+        questions = list(user_questions) + list(public_questions)
+        weights = user_questions_weights + [10] * len(public_questions)
         return random.choices(questions, weights=weights, k=1)[0]
 
     @staticmethod
@@ -81,7 +87,7 @@ class QuestionService:
         if answer_id:
             answer = self.answer_repo.get_by_id(answer_id)
             if answer is None:
-                raise QuestionNotFoundError
+                raise AnswerNotFoundError
             answer.type = answer_type
         else:
             answer = Answer(
@@ -97,7 +103,7 @@ class QuestionService:
 
         last_types, total_count = self.answer_repo.get_answer_counts_for_weight(
             question_id=question.id,
-            history_limit=self.ANSWERS_HISTORY_LIMIT
+            history_limit=ANSWERS_HISTORY_LIMIT
         )
 
         incorrect_count = last_types.count(AnswerType.INCORRECT)
@@ -106,18 +112,50 @@ class QuestionService:
         base_weight_calc = (2.0 * incorrect_count) + (1.0 * part_count)
         final_weight = base_weight_calc
 
-        if 0 < total_count < self.BOOST_ANSWER_THRESHOLD:
-            boost_multiplier = self.BOOST_LIMIT_FACTOR / total_count
+        if 0 < total_count < BOOST_ANSWER_THRESHOLD:
+            boost_multiplier = BOOST_LIMIT_FACTOR / total_count
             boosted_weight = base_weight_calc * boost_multiplier
-            final_weight = min(self.MAX_WEIGHT_DURING_BOOST, boosted_weight)
+            final_weight = min(MAX_WEIGHT_DURING_BOOST, boosted_weight)
 
-        final_weight = max(self.MIN_FINAL_WEIGHT, final_weight)
+        final_weight = max(MIN_FINAL_WEIGHT, final_weight)
         question.weight = final_weight
 
         self.session.add(question)
         self.session.commit()
 
         return answer
+
+    def _submit_public_answer(self, question: PublicQuestion, raw_user_input: str, user_date: PartialDate, user: User,
+                              answer_type: AnswerType, answer_id: int = None) -> PublicAnswer:
+        if answer_id:
+            answer = self.public_answer_repo.get_by_id(answer_id)
+            if answer is None:
+                raise AnswerNotFoundError
+            answer.type = answer_type
+        else:
+            answer = PublicAnswer(
+                text=raw_user_input,
+                year=user_date.year,
+                month=user_date.month,
+                day=user_date.day,
+                type=answer_type
+            )
+            answer.question = question
+            answer.user = user
+            self.public_answer_repo.add(answer)
+            self.session.flush([answer])
+
+        self.session.commit()
+        return answer
+
+    def submit_user_text_public_answer(self, question_id: int, raw_user_input: str, user: User) -> PublicAnswer:
+        user_date = self.parse_date_string(raw_user_input)
+        question = self.public_question_repo.get_by_id(question_id)
+        if question is None:
+            raise QuestionNotFoundError
+        answer_type = self._compare_dates(user_date, question.correct_answer_date)
+        return self._submit_public_answer(question=question, raw_user_input=raw_user_input, user_date=user_date,
+                                          answer_type=answer_type, user=user)
 
     def submit_user_text_answer(self, question_id: int, raw_user_input: str) -> Answer:
         user_date = self.parse_date_string(raw_user_input)
@@ -128,10 +166,22 @@ class QuestionService:
         return self._submit_answer_and_update_weight(question=question, raw_user_input=raw_user_input,
                                                      user_date=user_date, answer_type=answer_type)
 
+    def submit_user_choice_public_answer(self, text_answer_id: int, user_date: PartialDate) -> PublicAnswer:
+        answer = self.public_answer_repo.get_by_id(text_answer_id)
+        if answer is None:
+            raise AnswerNotFoundError
+        question = answer.question
+        answer_type = self._compare_dates(user_date, question.correct_answer_date)
+        if answer_type == AnswerType.CORRECT:
+            return self._submit_public_answer(question=question, raw_user_input=answer.text,
+                                              user_date=user_date, answer_type=AnswerType.PART,
+                                              answer_id=text_answer_id, user=answer.user)
+        return answer
+
     def submit_user_choice_answer(self, text_answer_id: int, user_date: PartialDate) -> Answer:
         answer = self.answer_repo.get_by_id(text_answer_id)
         if answer is None:
-            raise QuestionNotFoundError
+            raise AnswerNotFoundError
         question = answer.question
         answer_type = self._compare_dates(user_date, question.correct_answer_date)
         if answer_type == AnswerType.CORRECT:
@@ -141,10 +191,8 @@ class QuestionService:
         return answer
 
     @staticmethod
-    def generate_distractor_dates(answer: Answer, user: User) -> list[PartialDate]:
+    def generate_distractor_dates(user_date: PartialDate, correct_date: PartialDate, user: User) -> list[PartialDate]:
         distractor_count = user.suggested_answers_count-1
-        user_date = answer.date
-        correct_date = answer.question.correct_answer_date
 
         years = [correct_date.year] * distractor_count
         months = [correct_date.month] * distractor_count
@@ -202,5 +250,12 @@ class QuestionService:
         question.user = user
         question.correct_answer_date = correct_answer_date
         self.question_repo.add(question)
+        self.session.commit()
+        return question
+
+    def create_public_question(self, text: str, correct_answer_date: PartialDate) -> PublicQuestion:
+        question = PublicQuestion(text=text)
+        question.correct_answer_date = correct_answer_date
+        self.public_question_repo.add(question)
         self.session.commit()
         return question

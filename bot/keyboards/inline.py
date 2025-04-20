@@ -23,11 +23,12 @@ def get_to_main_kb():
     return builder.adjust(1).as_markup()
 
 
-def get_distractors_kb(distractors: Iterable[PartialDate], answer_id: int):
+def get_distractors_kb(distractors: Iterable[PartialDate], answer_id: int, is_public: bool):
     builder = InlineKeyboardBuilder()
     for distractor in distractors:
         builder.button(text=str(distractor), callback_data=DateChoiceCD(answer_id=answer_id, year=distractor.year,
-                                                                        month=distractor.month, day=distractor.day))
+                                                                        month=distractor.month, day=distractor.day,
+                                                                        is_public=is_public))
     return builder.adjust(2).as_markup()
 
 

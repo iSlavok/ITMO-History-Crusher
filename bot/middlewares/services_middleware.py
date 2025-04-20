@@ -4,6 +4,7 @@ from aiogram.types import Message
 from aiogram.dispatcher.flags import get_flag
 from sqlalchemy.orm import Session
 
+from bot.repositories import QuestionRepository, AnswerRepository, PublicQuestionRepository, PublicAnswerRepository
 from bot.services import QuestionService
 
 
@@ -22,6 +23,13 @@ class ServicesMiddleware(BaseMiddleware):
         session: Session = data["session"]
         for service in required:
             if service == "question":
-                services["question_service"] = QuestionService(session)
+                question_repo = QuestionRepository(session)
+                answer_repo = AnswerRepository(session)
+                public_question_repo = PublicQuestionRepository(session)
+                public_answer_repo = PublicAnswerRepository(session)
+                services["question_service"] = QuestionService(
+                    session=session, question_repo=question_repo, answer_repo=answer_repo,
+                    public_question_repo=public_question_repo, public_answer_repo=public_answer_repo
+                )
         data.update(services)
         return await handler(event, data)
