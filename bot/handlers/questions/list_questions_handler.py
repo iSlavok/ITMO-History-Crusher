@@ -6,7 +6,8 @@ from aiogram.types import CallbackQuery
 from bot.callback_data import ListQuestionsPageCD
 from bot.config import messages
 from bot.keyboards import get_list_questions_kb
-from bot.models import User, Question
+from bot.models import User
+from bot.schemas import QuestionInfo
 from bot.services import QuestionService
 
 router = Router(name="list_questions_router")
@@ -43,13 +44,14 @@ async def list_questions_page(callback: CallbackQuery, callback_data: ListQuesti
     await callback.answer()
 
 
-def get_question_list_text(questions: Sequence[Question], skip_count: int = 0) -> str:
+def get_question_list_text(questions: Sequence[QuestionInfo], skip_count: int = 0) -> str:
     text = messages.questions.list_questions.header + "\n"
     for i, question in enumerate(questions, start=1):
         text += "\n" + messages.questions.list_questions.question.format(
             question_number=i + skip_count,
             question_id=question.id,
+            answers_score=question.latest_answers_score,
             question_text=question.text,
-            question_date=str(question.correct_answer_date),
+            question_date=str(question.date),
         )
     return text

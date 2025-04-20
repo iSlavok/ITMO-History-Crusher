@@ -1,6 +1,7 @@
 import calendar
 import random
 import re
+from operator import attrgetter
 from typing import Sequence
 
 from sqlalchemy.orm import Session
@@ -9,7 +10,7 @@ from bot.config import config
 from bot.enums import AnswerType
 from bot.models import Question, Answer, User, PublicQuestion, PublicAnswer
 from bot.repositories import AnswerRepository, QuestionRepository, PublicQuestionRepository, PublicAnswerRepository
-from bot.schemas import PartialDate
+from bot.schemas import PartialDate, QuestionInfo
 from bot.services.exceptions import DateParsingError, QuestionNotFoundError, AnswerNotFoundError
 
 ANSWERS_HISTORY_LIMIT = config.answer_history_limit
@@ -263,8 +264,41 @@ class QuestionService:
         self.session.commit()
         return question
 
-    def get_questions(self, user: User, page: int = 1, limit: int = 10) -> Sequence[Question]:
-        return self.question_repo.get_user_questions(user=user, skip=(page - 1) * limit, limit=limit)
+    def get_questions(self, user: User, page: int = 1, limit: int = 10,
+                      latest_answers_limit: int = 10) -> list[QuestionInfo]:
+        if page < 1:
+            page = 1
+        skip = (page - 1) * limit
+        db_questions: Sequence[Question] = self.question_repo.get_user_questions_paginated_with_answers(
+            user=user, skip=skip, limit=limit
+        )
+        result_list: list[QuestionInfo] = []
+        start_number = skip + 1
+        for i, question in enumerate(db_questions):
+            all_answers = question.answers
+            sorted_answers = sorted(
+                all_answers,
+                key=attrgetter('created_at'),
+                reverse=True
+            )
+            latest_answers = sorted_answers[:latest_answers_limit]
+            score = 0.0
+            for answer in latest_answers:
+                if answer.type == AnswerType.CORRECT:
+                    score += 1.0
+                elif answer.type == AnswerType.PART:
+                    score += 0.5
+            total_considered = len(latest_answers)
+            score_str = f"{score:g}/{total_considered}"
+            question_info = QuestionInfo(
+                number=start_number + i,
+                id=question.id,
+                text=question.text,
+                date=question.correct_answer_date,
+                latest_answers_score=score_str
+            )
+            result_list.append(question_info)
+        return result_list
 
     def get_public_questions(self, page: int = 1, limit: int = 10) -> Sequence[PublicQuestion]:
         return self.public_question_repo.list_all(skip=(page - 1) * limit, limit=limit)

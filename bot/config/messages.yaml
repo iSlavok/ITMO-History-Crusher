@@ -89,10 +89,12 @@ questions:
     # Доступные переменные:
     # {question_number} - номер вопроса
     # {question_id} - id вопроса
+    # {answers_score} - кол-во правильных ответов за последние 10 ответов
     # {question_text} - текст вопроса
     # {question_date} - дата-ответ на вопрос
     question: |
-      <b>{question_number}.</b> (ID: {question_id})
+      <b>{question_number}.</b> (ID: <i>{question_id}</i>).
+      <b>Правильных ответов:</b> <i>{answers_score}</i>
       <b>Вопрос:</b> <i>{question_text}</i>
       <b>Ответ:</b> <i>{question_date}</i>
 
@@ -108,7 +110,7 @@ questions:
     # {question_text} - текст вопроса
     # {question_date} - дата-ответ на вопрос
     question: |
-      <b>{question_number}.</b> (ID: {question_id})
+      <b>{question_number}.</b> (ID: <i>{question_id}</i>).
       <b>Вопрос:</b> <i>{question_text}</i>
       <b>Ответ:</b> <i>{question_date}</i>
 

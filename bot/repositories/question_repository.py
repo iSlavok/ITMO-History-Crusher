@@ -1,11 +1,10 @@
 from typing import Sequence
 
 from sqlalchemy import select, func, or_
-from sqlalchemy.orm import Session, aliased
+from sqlalchemy.orm import Session, aliased, selectinload
 
-from bot.repositories import BaseRepository
 from bot.models import Question, User
-from bot.repositories.base_repository import ModelType
+from bot.repositories import BaseRepository
 
 
 class QuestionRepository(BaseRepository[Question]):
@@ -44,10 +43,14 @@ class QuestionRepository(BaseRepository[Question]):
 
         return self.session.scalars(statement).all()
 
-    def get_user_questions(self, user: User, skip: int = 0, limit: int = 100) -> Sequence[Question]:
+    def get_user_questions_paginated_with_answers(self, user: User, skip: int = 0,
+                                                  limit: int = 10) -> Sequence[Question]:
         statement = (
             select(self.model)
-            .where(self.model.user == user)
+            .where(self.model.user_id == user.id)
+            .options(
+                selectinload(self.model.answers)
+            )
             .order_by(self.model.id)
             .offset(skip)
             .limit(limit)
