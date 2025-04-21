@@ -315,10 +315,24 @@ class QuestionService:
             raise QuestionNotFoundError
         return question
 
+    def get_public_question_by_id(self, question_id: int) -> PublicQuestion:
+        question = self.public_question_repo.get_by_id(question_id)
+        if question is None:
+            raise QuestionNotFoundError
+        return question
+
     def delete_question(self, question_id: int, user: User) -> Question:
         question = self.question_repo.get_by_id_and_user(question_id, user)
         if question is None:
             raise QuestionNotFoundError
         self.question_repo.delete(question)
+        self.session.commit()
+        return question
+
+    def delete_public_question(self, question_id: int) -> PublicQuestion:
+        question = self.public_question_repo.get_by_id(question_id)
+        if question is None:
+            raise QuestionNotFoundError
+        self.public_question_repo.delete(question)
         self.session.commit()
         return question

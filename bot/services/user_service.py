@@ -1,3 +1,5 @@
+from typing import Sequence
+
 from sqlalchemy.orm import Session
 
 from bot.repositories import UserRepository
@@ -45,3 +47,13 @@ class UserService:
         self.session.commit()
         self.session.refresh(self._user)
         return self._user
+
+    def get_users(self, page: int = 1, limit: int = 10) -> Sequence[User]:
+        if page < 1:
+            page = 1
+        skip = (page - 1) * limit
+        users = self._user_repo.list_all(skip=skip, limit=limit)
+        return users
+
+    def get_users_count(self) -> int:
+        return self._user_repo.get_users_count()

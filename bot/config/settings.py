@@ -14,18 +14,28 @@ class Config(BaseModel):
 
 class Buttons(BaseModel):
     main: str
+    adminka: str
     back: str
     test: str
     questions: str
+    settings: str
+
     create_question: str
     list_questions: str
-    list_public_questions: str
     delete_question: str
-    delete_confirm: str
-    settings: str
+    delete_question_confirm: str
+
+    create_public_question: str
+    list_public_questions: str
+    delete_public_question: str
+    delete_public_question_confirm: str
+
     setting_answer_count: str
     enable_public_questions: str
     disable_public_questions: str
+
+    public_questions: str
+    users_list: str
 
 
 class ErrorMessages(BaseModel):
@@ -51,6 +61,11 @@ class DeleteQuestionMessages(BaseModel):
     delete_success: str
 
 
+class UsersListMessages(BaseModel):
+    header: str
+    user: str
+
+
 class TestMessages(BaseModel):
     question: str
     correct_text_answer: str
@@ -64,14 +79,23 @@ class QuestionsMessages(BaseModel):
     questions_menu: str
     create_question: CreateQuestionMessages
     list_questions: ListQuestionsMessages
-    list_public_questions: ListQuestionsMessages
     delete_question: DeleteQuestionMessages
+
+    public_questions_menu: str
+    create_public_question: CreateQuestionMessages
+    list_public_questions: ListQuestionsMessages
+    delete_public_question: DeleteQuestionMessages
 
 
 class SettingsMessages(BaseModel):
     settings_menu: str
     answer_count_request: str
     answer_count_success: str
+
+
+class AdminkaMessages(BaseModel):
+    adminka_menu: str
+    users_list: UsersListMessages
 
 
 class Messages(BaseModel):
@@ -81,6 +105,7 @@ class Messages(BaseModel):
     test: TestMessages
     questions: QuestionsMessages
     settings: SettingsMessages
+    adminka: AdminkaMessages
 
 
 def load_config(path: str = "bot/config/config.yaml") -> Config:

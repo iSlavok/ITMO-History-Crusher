@@ -1,12 +1,12 @@
 import os
 from typing import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, NullPool
 from sqlalchemy.orm import sessionmaker, Session as SqlaSession
 
 from bot.database import Base
 
-engine = create_engine(os.getenv("DATABASE_URL"))
+engine = create_engine(os.getenv("DATABASE_URL"), poolclass=NullPool)
 
 Session = sessionmaker(bind=engine)
 

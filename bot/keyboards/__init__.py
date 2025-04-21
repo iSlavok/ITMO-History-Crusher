@@ -10,9 +10,13 @@ from .questions_keyboards import (
     get_questions_kb,
     get_to_questions_kb,
     get_list_questions_kb,
-    get_list_public_questions_kb,
     get_delete_question_confirm_kb,
+    get_public_questions_kb,
+    get_to_public_questions_kb,
+    get_list_public_questions_kb,
+    get_delete_public_question_confirm_kb,
 )
+from .adminka import get_adminka_kb, get_to_adminka_kb, get_users_list_kb
 
 __all__ = [
     "get_main_kb",
@@ -25,6 +29,13 @@ __all__ = [
     "get_questions_kb",
     "get_to_questions_kb",
     "get_list_questions_kb",
-    "get_list_public_questions_kb",
     "get_delete_question_confirm_kb",
+    "get_public_questions_kb",
+    "get_to_public_questions_kb",
+    "get_list_public_questions_kb",
+    "get_delete_public_question_confirm_kb",
+
+    "get_adminka_kb",
+    "get_to_adminka_kb",
+    "get_users_list_kb",
 ]
