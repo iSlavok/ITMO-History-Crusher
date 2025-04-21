@@ -1,4 +1,5 @@
 from aiogram import Router, F
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
@@ -14,10 +15,13 @@ router = Router(name="delete_question_router")
 
 
 @router.callback_query(F.data == "delete_question")
-async def delete_question_id_request(callback: CallbackQuery, state: FSMContext):
-    await callback.message.answer(messages.questions.delete_question.id_request, reply_markup=get_to_questions_kb())
+@router.message(Command("delete_question"))
+async def delete_question_id_request(event: Message | CallbackQuery, state: FSMContext):
+    message: Message = event.message if isinstance(event, CallbackQuery) else event
+    await message.answer(messages.questions.delete_question.id_request, reply_markup=get_to_questions_kb())
     await state.set_state(DeleteQuestion.ID)
-    await callback.answer()
+    if isinstance(event, CallbackQuery):
+        await event.answer()
 
 
 @router.message(

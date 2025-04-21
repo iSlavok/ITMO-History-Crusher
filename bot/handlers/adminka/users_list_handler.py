@@ -16,7 +16,7 @@ router = Router(name="users_list_router")
 @router.callback_query(F.data == "users_list")
 @router.message(Command(commands=["users_list", "users"]))
 async def users_list_open(event: Message | CallbackQuery, user_service: UserService):
-    message = event.message if isinstance(event, CallbackQuery) else event
+    message: Message = event.message if isinstance(event, CallbackQuery) else event
     users = user_service.get_users(page=1, limit=10)
     total_count = user_service.get_users_count()
     total_pages = (total_count // 10) + (1 if total_count % 10 > 0 else 0)

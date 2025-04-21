@@ -1,6 +1,6 @@
 from aiogram import Router, F
-from aiogram.filters import or_f
-from aiogram.types import CallbackQuery
+from aiogram.filters import or_f, Command
+from aiogram.types import CallbackQuery, Message
 
 from bot.callback_data import SettingAnswerCountCD, EnablePublicQuestions
 from bot.config import messages
@@ -16,13 +16,16 @@ router.callback_query.filter(or_f(RoleFilter(UserRole.USER), RoleFilter(UserRole
 
 
 @router.callback_query(F.data == "settings")
-async def open_settings(callback: CallbackQuery, user: User):
-    await callback.message.answer(
+@router.message(Command("settings"))
+async def open_settings(event: Message | CallbackQuery, user: User):
+    message: Message = event.message if isinstance(event, CallbackQuery) else event
+    await message.answer(
         messages.settings.settings_menu.format(
             answers_count=user.suggested_answers_count,
             public_status="✅ Включено" if user.enable_public_questions else "❌ Выключено"
         ), reply_markup=get_settings_kb(enabled_public_questions=user.enable_public_questions))
-    await callback.answer()
+    if isinstance(event, CallbackQuery):
+        await event.answer()
 
 
 @router.callback_query(F.data == "setting_answer_count")

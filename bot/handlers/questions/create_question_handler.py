@@ -1,4 +1,5 @@
 from aiogram import Router, F
+from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
@@ -16,11 +17,14 @@ router.message.middleware.register(ServicesMiddleware())
 
 
 @router.callback_query(F.data == "create_question")
-async def start(callback: CallbackQuery, state: FSMContext):
-    await callback.message.answer(messages.questions.create_question.question_text_request,
+@router.message(Command("create_question"))
+async def start(event: Message | CallbackQuery, state: FSMContext):
+    message: Message = event.message if isinstance(event, CallbackQuery) else event
+    await message.answer(messages.questions.create_question.question_text_request,
                                   reply_markup=get_to_questions_kb())
     await state.set_state(CreateQuestion.TEXT)
-    await callback.answer()
+    if isinstance(event, CallbackQuery):
+        await event.answer()
 
 
 @router.message(

@@ -1,7 +1,7 @@
 from typing import cast
 
 from aiogram import Router, F
-from aiogram.filters import or_f
+from aiogram.filters import or_f, Command
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message
 
@@ -26,9 +26,15 @@ router.callback_query.filter(or_f(RoleFilter(UserRole.USER), RoleFilter(UserRole
     F.data == "test",
     flags={"services": ["question"]},
 )
-async def start(callback: CallbackQuery, question_service: QuestionService, state: FSMContext, user: User):
-    await send_question(message=callback.message, question_service=question_service, state=state, user=user)
-    await callback.answer()
+@router.message(
+    Command("test"),
+    flags={"services": ["question"]},
+)
+async def start(event: Message | CallbackQuery, question_service: QuestionService, state: FSMContext, user: User):
+    message: Message = event.message if isinstance(event, CallbackQuery) else event
+    await send_question(message=message, question_service=question_service, state=state, user=user)
+    if isinstance(event, CallbackQuery):
+        await event.answer()
 
 
 @router.message(

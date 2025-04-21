@@ -15,7 +15,7 @@ router = Router(name="create_public_question_router")
 @router.callback_query(F.data == "create_public_question")
 @router.message(Command("create_public_question"))
 async def start(event: Message | CallbackQuery, state: FSMContext):
-    message = event.message if isinstance(event, CallbackQuery) else event
+    message: Message = event.message if isinstance(event, CallbackQuery) else event
     await message.answer(messages.questions.create_public_question.question_text_request,
                          reply_markup=get_to_public_questions_kb())
     await state.set_state(CreatePublicQuestion.TEXT)

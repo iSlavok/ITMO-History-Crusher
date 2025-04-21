@@ -17,7 +17,7 @@ router.callback_query.filter(RoleFilter(UserRole.ADMIN))
 @router.callback_query(F.data == "adminka")
 @router.message(Command("adminka"))
 async def adminka_menu(event: Message | CallbackQuery, state: FSMContext):
-    message = event.message if isinstance(event, CallbackQuery) else event
+    message: Message = event.message if isinstance(event, CallbackQuery) else event
     await message.answer(messages.adminka.adminka_menu, reply_markup=get_adminka_kb())
     await state.clear()
     if isinstance(event, CallbackQuery):

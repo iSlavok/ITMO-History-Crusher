@@ -1,7 +1,8 @@
 from typing import Sequence
 
 from aiogram import Router, F
-from aiogram.types import CallbackQuery
+from aiogram.filters import Command
+from aiogram.types import CallbackQuery, Message
 
 from bot.callback_data import ListQuestionsPageCD, ListPublicQuestionsPageCD
 from bot.config import messages
@@ -16,15 +17,21 @@ router = Router(name="list_public_questions_router")
     F.data == "list_public_questions",
     flags={"services": ["question"]},
 )
-async def list_public_questions_open(callback: CallbackQuery, question_service: QuestionService):
+@router.message(
+    Command("list_public_questions"),
+    flags={"services": ["question"]},
+)
+async def list_public_questions_open(event: Message | CallbackQuery, question_service: QuestionService):
+    message: Message = event.message if isinstance(event, CallbackQuery) else event
     public_questions = question_service.get_public_questions(page=1, limit=10)
     total_count = question_service.get_public_questions_count()
     total_pages = (total_count // 10) + (1 if total_count % 10 > 0 else 0)
-    await callback.message.answer(
+    await message.answer(
         get_question_list_text(public_questions),
         reply_markup=get_list_public_questions_kb(1, total_pages),
     )
-    await callback.answer()
+    if isinstance(event, CallbackQuery):
+        await event.answer()
 
 
 @router.callback_query(
