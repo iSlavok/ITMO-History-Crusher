@@ -17,7 +17,7 @@ from bot.middlewares import UserMiddleware, ServicesMiddleware
 
 async def start_main_bot():
     bot = Bot(token=os.getenv("BOT_TOKEN"), default=DefaultBotProperties(parse_mode="HTML"))
-    storage = RedisStorage(Redis(), key_builder=DefaultKeyBuilder(with_destiny=True, with_bot_id=True))
+    storage = RedisStorage(Redis(host="redis"), key_builder=DefaultKeyBuilder(with_destiny=True, with_bot_id=True))
     dp = Dispatcher(storage=storage)
 
     dp.message.filter(F.chat.type == ChatType.PRIVATE)

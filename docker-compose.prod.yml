@@ -1,0 +1,7 @@
+services:
+  bot:
+    volumes:
+      - ./database.db:/app/database.db
+
+volumes:
+  bot_data:
