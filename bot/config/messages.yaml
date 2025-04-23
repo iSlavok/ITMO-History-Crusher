@@ -267,5 +267,5 @@ adminka:
     # {name} - имя пользователя
     user: |
       <b>{number}.</b> (ID: <i>{id}</i>).
-      <b>Юзернейм:</b> @{username}
       <b>Имя:</b> {name}
+      <b>Юзернейм:</b> @{username}

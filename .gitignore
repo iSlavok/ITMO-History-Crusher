@@ -1,5 +1,5 @@
 .idea
 .venv
-database.db
+data/database.db
 __pycache__/
 .env
