@@ -2,6 +2,7 @@
 
 COMPOSE_FILE="docker-compose.yml"
 PROFILE="prod"
+PROJECT_NAME=$(basename $(pwd))
 
 echo "🚀 Starting bot update..."
 
@@ -17,7 +18,14 @@ fi
 echo "🛑 Stopping current containers..."
 docker compose -f $COMPOSE_FILE --profile $PROFILE down
 
-echo "🏗️ Building new version of the bot..."
+echo "🗑️ Removing old bot images..."
+OLD_IMAGES=$(docker images --format "{{.Repository}}:{{.Tag}}" | grep "^${PROJECT_NAME}-bot" || true)
+if [ ! -z "$OLD_IMAGES" ]; then
+    echo "🧹 Removing images: $OLD_IMAGES"
+    docker rmi $OLD_IMAGES || true
+fi
+
+echo "🏗️ Building new version of the bot from scratch..."
 if ! docker compose -f $COMPOSE_FILE build --no-cache; then
     echo "❌ Error building image! Check error log above."
     exit 1
@@ -29,7 +37,7 @@ if ! docker compose -f $COMPOSE_FILE --profile $PROFILE up -d; then
     exit 1
 fi
 
-echo "🧹 Removing outdated images..."
+echo "🧹 Removing other unused images..."
 docker image prune -f
 
 echo "✨ Done! Bot successfully updated and launched."
