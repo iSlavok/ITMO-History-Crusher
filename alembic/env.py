@@ -2,8 +2,7 @@ import os
 
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from sqlalchemy import create_engine, NullPool
 
 from alembic import context
 
@@ -63,11 +62,7 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    connectable = create_engine(os.getenv("DATABASE_URL"), poolclass=NullPool)
 
     with connectable.connect() as connection:
         context.configure(
