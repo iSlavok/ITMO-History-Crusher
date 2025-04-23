@@ -15,16 +15,16 @@ if [ -d ".git" ]; then
 fi
 
 echo "🛑 Stopping current containers..."
-docker-compose -f $COMPOSE_FILE --profile $PROFILE down
+docker compose -f $COMPOSE_FILE --profile $PROFILE down
 
 echo "🏗️ Building new version of the bot..."
-if ! docker-compose -f $COMPOSE_FILE build --no-cache; then
+if ! docker compose -f $COMPOSE_FILE build --no-cache; then
     echo "❌ Error building image! Check error log above."
     exit 1
 fi
 
 echo "🚀 Starting new version of the bot..."
-if ! docker-compose -f $COMPOSE_FILE --profile $PROFILE up -d; then
+if ! docker compose -f $COMPOSE_FILE --profile $PROFILE up -d; then
     echo "❌ Error starting containers! Check error log above."
     exit 1
 fi
@@ -34,4 +34,4 @@ docker image prune -f
 
 echo "✨ Done! Bot successfully updated and launched."
 echo "📊 Containers status:"
-docker-compose -f $COMPOSE_FILE ps
+docker compose -f $COMPOSE_FILE ps
