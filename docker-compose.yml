@@ -1,6 +1,6 @@
 services:
   bot:
-    build: .
+    image: ghcr.io/islavok/itmo-history-crusher:latest
     restart: unless-stopped
     env_file:
       - .env

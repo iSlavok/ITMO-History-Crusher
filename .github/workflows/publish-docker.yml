@@ -58,3 +58,31 @@ jobs:
           COSIGN_EXPERIMENTAL: "true"
         run: |
           echo "${{ steps.meta.outputs.tags }}" | xargs -I {} cosign sign {}@${{ steps.build-and-push.outputs.digest }}
+
+  deploy:
+    needs: build-and-push
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Install SSH Key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: ${{ secrets.SSH_HOST }}
+
+      - name: Connect to Server and Deploy
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            cd ${{ secrets.WORK_DIR }}
+            docker compose --profile prod pull
+            docker compose --profile prod up -d
+            exit
+          EOF
+
+      - name: Clean up Docker resources on Server
+        run: |
+          ssh ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'EOF'
+            docker system prune -a -f
+            exit
+          EOF
