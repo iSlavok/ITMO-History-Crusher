@@ -17,8 +17,8 @@ router = Router(name="users_list_router")
 @router.message(Command(commands=["users_list", "users"]))
 async def users_list_open(event: Message | CallbackQuery, user_service: UserService):
     message: Message = event.message if isinstance(event, CallbackQuery) else event
-    users = user_service.get_users(page=1, limit=10)
-    total_count = user_service.get_users_count()
+    users = await user_service.get_users(page=1, limit=10)
+    total_count = await user_service.get_users_count()
     total_pages = (total_count // 10) + (1 if total_count % 10 > 0 else 0)
     await message.answer(
         get_users_list_text(users),
@@ -30,8 +30,8 @@ async def users_list_open(event: Message | CallbackQuery, user_service: UserServ
 
 @router.callback_query(UsersListPageCD.filter())
 async def users_list_page(callback: CallbackQuery, callback_data: UsersListPageCD, user_service: UserService):
-    users = user_service.get_users(page=callback_data.page, limit=10)
-    total_count = user_service.get_users_count()
+    users = await user_service.get_users(page=callback_data.page, limit=10)
+    total_count = await user_service.get_users_count()
     total_pages = (total_count // 10) + (1 if total_count % 10 > 0 else 0)
     await callback.message.edit_text(
         get_users_list_text(users, skip_count=(callback_data.page - 1) * 10),

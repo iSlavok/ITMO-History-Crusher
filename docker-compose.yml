@@ -7,9 +7,9 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
     profiles: ["prod"]
-    volumes:
-      - ./data:/app/data
     deploy:
       resources:
         limits:
@@ -26,12 +26,13 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      postgres:
+        condition: service_healthy
     volumes:
       - ./bot:/app/bot
       - ./alembic:/app/alembic
       - ./main.py:/app/main.py
       - ./alembic.ini:/app/alembic.ini
-      - ./data:/app/data
     command: python main.py
     profiles: ["dev"]
     networks:
@@ -56,8 +57,34 @@ services:
     networks:
       - bot_network
 
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mydatabase}
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    profiles: ["dev","prod"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 256M
+    networks:
+      - bot_network
+    ports:
+      - "5433:5432"
+
 volumes:
   redis_data:
+  postgres_data:
 
 networks:
   bot_network:

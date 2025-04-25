@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.client.default import DefaultBotProperties
@@ -10,14 +9,16 @@ from aiogram.fsm.storage.redis import RedisStorage
 from aiogram.types import BotCommand
 from redis.asyncio import Redis
 
+from bot.config import env_config
 from bot.database import init_db
 from bot.handlers import *
 from bot.middlewares import UserMiddleware, ServicesMiddleware
 
 
 async def start_main_bot():
-    bot = Bot(token=os.getenv("BOT_TOKEN"), default=DefaultBotProperties(parse_mode="HTML"))
-    storage = RedisStorage(Redis(host="redis"), key_builder=DefaultKeyBuilder(with_destiny=True, with_bot_id=True))
+    bot = Bot(token=env_config.BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
+    storage = RedisStorage(redis=Redis(host=env_config.REDIS_HOST, port=env_config.REDIS_PORT),
+                           key_builder=DefaultKeyBuilder(with_destiny=True, with_bot_id=True))
     dp = Dispatcher(storage=storage)
 
     dp.message.filter(F.chat.type == ChatType.PRIVATE)
@@ -45,7 +46,7 @@ async def main():
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
     )
-    init_db()
+    await init_db()
     await start_main_bot()
 
 if __name__ == "__main__":

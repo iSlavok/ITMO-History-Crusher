@@ -32,12 +32,13 @@ async def delete_question_id_request(event: Message | CallbackQuery, state: FSMC
 async def delete_question_id(message: Message, state: FSMContext, question_id: int, question_service: QuestionService,
                              user: User):
     try:
-        question = question_service.get_question_by_id(question_id, user)
+        question = await question_service.get_question_by_id(question_id, user)
     except QuestionNotFoundError:
         return await message.answer(messages.errors.question_not_found)
     await message.answer(messages.questions.delete_question.delete_confirm.format(question_text=question.text),
                          reply_markup=get_delete_question_confirm_kb(question.id))
     await state.set_state(DeleteQuestion.CONFIRM)
+    return None
 
 
 @router.callback_query(
@@ -49,7 +50,7 @@ async def delete_question_confirm(callback: CallbackQuery, callback_data: Delete
                                   question_service: QuestionService, user: User):
     question_id = callback_data.question_id
     try:
-        question = question_service.delete_question(question_id, user)
+        question = await question_service.delete_question(question_id, user)
     except QuestionNotFoundError:
         return await callback.answer(messages.errors.question_not_found)
     await callback.message.edit_text(
@@ -58,3 +59,4 @@ async def delete_question_confirm(callback: CallbackQuery, callback_data: Delete
     )
     await state.set_state(DeleteQuestion.ID)
     await callback.answer()
+    return None

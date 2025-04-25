@@ -1,23 +1,42 @@
-import os
-from typing import Generator
+from typing import AsyncGenerator
 
-from sqlalchemy import create_engine, NullPool
-from sqlalchemy.orm import sessionmaker, Session as SqlaSession
+from sqlalchemy import URL
+from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
-from bot.database import Base
+from bot.config import env_config
 
-engine = create_engine(os.getenv("DATABASE_URL"), poolclass=NullPool)
+database_url = URL.create(
+    drivername=env_config.DB_DRIVER,
+    host=env_config.DB_HOST,
+    port=env_config.DB_PORT,
+    username=env_config.DB_USER,
+    password=env_config.DB_PASS,
+    database=env_config.DB_NAME,
+)
 
-Session = sessionmaker(bind=engine)
+async_engine = create_async_engine(
+    database_url,
+    echo=False,
+    future=True
+)
+
+async_session_factory = async_sessionmaker(
+    bind=async_engine,
+    class_=AsyncSession,
+    expire_on_commit=False
+)
 
 
-def get_session() -> Generator[SqlaSession, None, None]:
-    session: SqlaSession = Session()
-    try:
-        yield session
-    finally:
-        session.close()
+async def get_session() -> AsyncGenerator[AsyncSession, None]:
+    async with async_session_factory() as session:
+        try:
+            yield session
+        except Exception as e:
+            await session.rollback()
+            raise e
 
 
-def init_db():
-    Base.metadata.create_all(bind=engine)
+async def init_db():
+    from bot.database import Base
+    async with async_engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)

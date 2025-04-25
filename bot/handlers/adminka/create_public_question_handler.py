@@ -41,13 +41,14 @@ async def text_input(message: Message, state: FSMContext, question_text: str):
 )
 async def answer_input(message: Message, state: FSMContext, question_service: QuestionService, answer_text: str):
     try:
-        answer_date = question_service.parse_date_string(answer_text)
+        answer_date = await question_service.parse_date_string(answer_text)
     except DateParsingError:
         return await message.answer(messages.errors.date_parsing_error)
     data = await state.get_data()
     question_text = data.get("create_question_text")
-    question_service.create_public_question(text=question_text, correct_answer_date=answer_date)
+    await question_service.create_public_question(text=question_text, correct_answer_date=answer_date)
     await message.answer(
         messages.questions.create_public_question.success_created.format(date=answer_date, question_text=question_text),
         reply_markup=get_to_public_questions_kb())
     await state.set_state(CreatePublicQuestion.TEXT)
+    return None

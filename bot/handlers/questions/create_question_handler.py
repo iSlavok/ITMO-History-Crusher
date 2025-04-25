@@ -21,7 +21,7 @@ router.message.middleware.register(ServicesMiddleware())
 async def start(event: Message | CallbackQuery, state: FSMContext):
     message: Message = event.message if isinstance(event, CallbackQuery) else event
     await message.answer(messages.questions.create_question.question_text_request,
-                                  reply_markup=get_to_questions_kb())
+                         reply_markup=get_to_questions_kb())
     await state.set_state(CreateQuestion.TEXT)
     if isinstance(event, CallbackQuery):
         await event.answer()
@@ -50,7 +50,9 @@ async def answer_input(message: Message, state: FSMContext, question_service: Qu
         return await message.answer(messages.errors.date_parsing_error)
     data = await state.get_data()
     question_text = data.get("create_question_text")
-    question_service.create_question(user=user, text=question_text, correct_answer_date=answer_date)
-    await message.answer(messages.questions.create_question.success_created.format(date=answer_date, question_text=question_text),
-                         reply_markup=get_to_questions_kb())
+    await question_service.create_question(user=user, text=question_text, correct_answer_date=answer_date)
+    await message.answer(
+        messages.questions.create_question.success_created.format(date=answer_date, question_text=question_text),
+        reply_markup=get_to_questions_kb())
     await state.set_state(CreateQuestion.TEXT)
+    return None

@@ -2,7 +2,7 @@ from typing import Callable, Any, Awaitable
 from aiogram import BaseMiddleware
 from aiogram.types import TelegramObject
 from aiogram.dispatcher.flags import get_flag
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.repositories import QuestionRepository, AnswerRepository, PublicQuestionRepository, PublicAnswerRepository
 from bot.services import QuestionService
@@ -16,7 +16,7 @@ class ServicesMiddleware(BaseMiddleware):
                        data: dict[str, Any]) -> Any:
         required = get_flag(data, "services", default=[])
         services = {}
-        session: Session = data["session"]
+        session: AsyncSession = data["session"]
         for service in required:
             if service == "question":
                 question_repo = QuestionRepository(session)

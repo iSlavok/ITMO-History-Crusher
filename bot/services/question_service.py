@@ -4,7 +4,7 @@ import re
 from operator import attrgetter
 from typing import Sequence
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.config import config
 from bot.enums import AnswerType
@@ -21,7 +21,7 @@ MIN_FINAL_WEIGHT = config.min_final_weight
 
 
 class QuestionService:
-    def __init__(self, session: Session, question_repo: QuestionRepository, answer_repo: AnswerRepository,
+    def __init__(self, session: AsyncSession, question_repo: QuestionRepository, answer_repo: AnswerRepository,
                  public_question_repo: PublicQuestionRepository, public_answer_repo: PublicAnswerRepository):
         self.session = session
         self.question_repo = question_repo
@@ -29,13 +29,13 @@ class QuestionService:
         self.public_question_repo = public_question_repo
         self.public_answer_repo = public_answer_repo
 
-    def get_random_question(self, user: User) -> Question | PublicQuestion | None:
-        user_questions = self.question_repo.get_prioritized_questions(user=user)
+    async def get_random_question(self, user: User) -> Question | PublicQuestion | None:
+        user_questions = await self.question_repo.get_prioritized_questions(user=user)
         if not user_questions:
             return None
         user_questions_weights = [question.weight for question in user_questions]
         if user.enable_public_questions:
-            public_questions = self.public_question_repo.list_all(limit=1000)
+            public_questions = await self.public_question_repo.list_all(limit=1000)
             questions = list(user_questions) + list(public_questions)
             weights = user_questions_weights + [10] * len(public_questions)
             return random.choices(questions, weights=weights, k=1)[0]
@@ -86,10 +86,10 @@ class QuestionService:
             return AnswerType.CORRECT
         return AnswerType.INCORRECT
 
-    def _submit_answer_and_update_weight(self, question: Question, raw_user_input: str, user_date: PartialDate,
-                                         answer_type: AnswerType, answer_id: int = None) -> Answer:
+    async def _submit_answer_and_update_weight(self, question: Question, raw_user_input: str, user_date: PartialDate,
+                                               answer_type: AnswerType, answer_id: int = None) -> Answer:
         if answer_id:
-            answer = self.answer_repo.get_by_id(answer_id)
+            answer = await self.answer_repo.get_by_id(answer_id)
             if answer is None:
                 raise AnswerNotFoundError
             answer.type = answer_type
@@ -103,7 +103,7 @@ class QuestionService:
                 type=answer_type
             )
             self.answer_repo.add(answer)
-            self.session.flush([answer])
+            await self.session.flush([answer])
 
         last_types, total_count = self.answer_repo.get_answer_counts_for_weight(
             question_id=question.id,
@@ -124,15 +124,14 @@ class QuestionService:
         final_weight = max(MIN_FINAL_WEIGHT, final_weight)
         question.weight = final_weight
 
-        self.session.add(question)
-        self.session.commit()
-
+        self.question_repo.add(question)
+        await self.session.commit()
         return answer
 
-    def _submit_public_answer(self, question: PublicQuestion, raw_user_input: str, user_date: PartialDate, user: User,
-                              answer_type: AnswerType, answer_id: int = None) -> PublicAnswer:
+    async def _submit_public_answer(self, question: PublicQuestion, raw_user_input: str, user_date: PartialDate,
+                                    user: User, answer_type: AnswerType, answer_id: int = None) -> PublicAnswer:
         if answer_id:
-            answer = self.public_answer_repo.get_by_id(answer_id)
+            answer = await self.public_answer_repo.get_by_id(answer_id)
             if answer is None:
                 raise AnswerNotFoundError
             answer.type = answer_type
@@ -147,56 +146,56 @@ class QuestionService:
             answer.question = question
             answer.user = user
             self.public_answer_repo.add(answer)
-            self.session.flush([answer])
+            await self.session.flush([answer])
 
-        self.session.commit()
+        await self.session.commit()
         return answer
 
-    def submit_user_text_public_answer(self, question_id: int, raw_user_input: str, user: User) -> PublicAnswer:
+    async def submit_user_text_public_answer(self, question_id: int, raw_user_input: str, user: User) -> PublicAnswer:
         user_date = self.parse_date_string(raw_user_input)
-        question = self.public_question_repo.get_by_id(question_id)
+        question = await self.public_question_repo.get_by_id(question_id)
         if question is None:
             raise QuestionNotFoundError
         answer_type = self._compare_dates(user_date, question.correct_answer_date)
-        return self._submit_public_answer(question=question, raw_user_input=raw_user_input, user_date=user_date,
-                                          answer_type=answer_type, user=user)
+        return await self._submit_public_answer(question=question, raw_user_input=raw_user_input, user_date=user_date,
+                                                answer_type=answer_type, user=user)
 
-    def submit_user_text_answer(self, question_id: int, raw_user_input: str) -> Answer:
+    async def submit_user_text_answer(self, question_id: int, raw_user_input: str) -> Answer:
         user_date = self.parse_date_string(raw_user_input)
-        question = self.question_repo.get_by_id(question_id)
+        question = await self.question_repo.get_by_id(question_id)
         if question is None:
             raise QuestionNotFoundError
         answer_type = self._compare_dates(user_date, question.correct_answer_date)
-        return self._submit_answer_and_update_weight(question=question, raw_user_input=raw_user_input,
-                                                     user_date=user_date, answer_type=answer_type)
+        return await self._submit_answer_and_update_weight(question=question, raw_user_input=raw_user_input,
+                                                           user_date=user_date, answer_type=answer_type)
 
-    def submit_user_choice_public_answer(self, text_answer_id: int, user_date: PartialDate) -> PublicAnswer:
-        answer = self.public_answer_repo.get_by_id(text_answer_id)
+    async def submit_user_choice_public_answer(self, text_answer_id: int, user_date: PartialDate) -> PublicAnswer:
+        answer = await self.public_answer_repo.get_by_id(text_answer_id)
         if answer is None:
             raise AnswerNotFoundError
         question = answer.question
         answer_type = self._compare_dates(user_date, question.correct_answer_date)
         if answer_type == AnswerType.CORRECT:
-            return self._submit_public_answer(question=question, raw_user_input=answer.text,
-                                              user_date=user_date, answer_type=AnswerType.PART,
-                                              answer_id=text_answer_id, user=answer.user)
+            return await self._submit_public_answer(question=question, raw_user_input=answer.text,
+                                                    user_date=user_date, answer_type=AnswerType.PART,
+                                                    answer_id=text_answer_id, user=answer.user)
         return answer
 
-    def submit_user_choice_answer(self, text_answer_id: int, user_date: PartialDate) -> Answer:
-        answer = self.answer_repo.get_by_id(text_answer_id)
+    async def submit_user_choice_answer(self, text_answer_id: int, user_date: PartialDate) -> Answer:
+        answer = await self.answer_repo.get_by_id(text_answer_id)
         if answer is None:
             raise AnswerNotFoundError
         question = answer.question
         answer_type = self._compare_dates(user_date, question.correct_answer_date)
         if answer_type == AnswerType.CORRECT:
-            return self._submit_answer_and_update_weight(question=question, raw_user_input=answer.text,
-                                                         user_date=user_date, answer_type=AnswerType.PART,
-                                                         answer_id=text_answer_id)
+            return await self._submit_answer_and_update_weight(question=question, raw_user_input=answer.text,
+                                                               user_date=user_date, answer_type=AnswerType.PART,
+                                                               answer_id=text_answer_id)
         return answer
 
     @staticmethod
     def generate_distractor_dates(user_date: PartialDate, correct_date: PartialDate, user: User) -> list[PartialDate]:
-        distractor_count = user.suggested_answers_count-1
+        distractor_count = user.suggested_answers_count - 1
 
         years = [correct_date.year] * distractor_count
         months = [correct_date.month] * distractor_count
@@ -249,27 +248,27 @@ class QuestionService:
         random.shuffle(dates)
         return dates
 
-    def create_question(self, user: User, text: str, correct_answer_date: PartialDate) -> Question:
+    async def create_question(self, user: User, text: str, correct_answer_date: PartialDate) -> Question:
         question = Question(text=text)
         question.user = user
         question.correct_answer_date = correct_answer_date
         self.question_repo.add(question)
-        self.session.commit()
+        await self.session.commit()
         return question
 
-    def create_public_question(self, text: str, correct_answer_date: PartialDate) -> PublicQuestion:
+    async def create_public_question(self, text: str, correct_answer_date: PartialDate) -> PublicQuestion:
         question = PublicQuestion(text=text)
         question.correct_answer_date = correct_answer_date
         self.public_question_repo.add(question)
-        self.session.commit()
+        await self.session.commit()
         return question
 
-    def get_questions(self, user: User, page: int = 1, limit: int = 10,
-                      latest_answers_limit: int = 10) -> list[QuestionInfo]:
+    async def get_questions(self, user: User, page: int = 1, limit: int = 10,
+                            latest_answers_limit: int = 10) -> list[QuestionInfo]:
         if page < 1:
             page = 1
         skip = (page - 1) * limit
-        db_questions: Sequence[Question] = self.question_repo.get_user_questions_paginated_with_answers(
+        db_questions: Sequence[Question] = await self.question_repo.get_user_questions_paginated_with_answers(
             user=user, skip=skip, limit=limit
         )
         result_list: list[QuestionInfo] = []
@@ -300,39 +299,39 @@ class QuestionService:
             result_list.append(question_info)
         return result_list
 
-    def get_public_questions(self, page: int = 1, limit: int = 10) -> Sequence[PublicQuestion]:
-        return self.public_question_repo.list_all(skip=(page - 1) * limit, limit=limit)
+    async def get_public_questions(self, page: int = 1, limit: int = 10) -> Sequence[PublicQuestion]:
+        return await self.public_question_repo.list_all(skip=(page - 1) * limit, limit=limit)
 
-    def get_questions_count(self, user: User) -> int:
-        return self.question_repo.get_user_questions_count(user=user)
+    async def get_questions_count(self, user: User) -> int:
+        return await self.question_repo.get_user_questions_count(user=user)
 
-    def get_public_questions_count(self) -> int:
-        return self.public_question_repo.get_public_questions_count()
+    async def get_public_questions_count(self) -> int:
+        return await self.public_question_repo.get_public_questions_count()
 
-    def get_question_by_id(self, question_id: int, user: User) -> Question:
-        question = self.question_repo.get_by_id_and_user(question_id, user)
+    async def get_question_by_id(self, question_id: int, user: User) -> Question:
+        question = await self.question_repo.get_by_id_and_user(question_id, user)
         if question is None:
             raise QuestionNotFoundError
         return question
 
-    def get_public_question_by_id(self, question_id: int) -> PublicQuestion:
-        question = self.public_question_repo.get_by_id(question_id)
+    async def get_public_question_by_id(self, question_id: int) -> PublicQuestion:
+        question = await self.public_question_repo.get_by_id(question_id)
         if question is None:
             raise QuestionNotFoundError
         return question
 
-    def delete_question(self, question_id: int, user: User) -> Question:
-        question = self.question_repo.get_by_id_and_user(question_id, user)
+    async def delete_question(self, question_id: int, user: User) -> Question:
+        question = await self.question_repo.get_by_id_and_user(question_id, user)
         if question is None:
             raise QuestionNotFoundError
-        self.question_repo.delete(question)
-        self.session.commit()
+        await self.question_repo.delete(question)
+        await self.session.commit()
         return question
 
-    def delete_public_question(self, question_id: int) -> PublicQuestion:
-        question = self.public_question_repo.get_by_id(question_id)
+    async def delete_public_question(self, question_id: int) -> PublicQuestion:
+        question = await self.public_question_repo.get_by_id(question_id)
         if question is None:
             raise QuestionNotFoundError
-        self.public_question_repo.delete(question)
-        self.session.commit()
+        await self.public_question_repo.delete(question)
+        await self.session.commit()
         return question

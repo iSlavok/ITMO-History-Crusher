@@ -49,10 +49,10 @@ async def answer_input(message: Message, state: FSMContext, question_service: Qu
     is_public = data.get("is_public")
     try:
         if is_public:
-            answer = question_service.submit_user_text_public_answer(question_id=question_id,
-                                                                     raw_user_input=answer_text, user=user)
+            answer = await question_service.submit_user_text_public_answer(question_id=question_id,
+                                                                           raw_user_input=answer_text, user=user)
         else:
-            answer = question_service.submit_user_text_answer(question_id=question_id, raw_user_input=answer_text)
+            answer = await question_service.submit_user_text_answer(question_id=question_id, raw_user_input=answer_text)
     except DateParsingError:
         return await message.answer(messages.errors.date_parsing_error)
     except QuestionNotFoundError:
@@ -64,9 +64,11 @@ async def answer_input(message: Message, state: FSMContext, question_service: Qu
     distractors = question_service.generate_distractor_dates(user_date=answer.date,
                                                              correct_date=question.correct_answer_date, user=user)
     await message.answer(messages.test.incorrect_text_answer,
-                         reply_markup=get_distractors_kb(distractors, answer_id=answer.id, is_public=is_public))  # type: ignore
+                         reply_markup=get_distractors_kb(distractors, answer_id=answer.id,  # type: ignore
+                                                         is_public=is_public))
     await state.set_state(Test.CHOICE_ANSWER)
     await state.update_data(answer_id=answer.id)
+    return None
 
 
 @router.callback_query(
@@ -79,10 +81,11 @@ async def answer_choice(callback: CallbackQuery, callback_data: DateChoiceCD, st
     try:
         date = PartialDate(year=callback_data.year, month=callback_data.month, day=callback_data.day)
         if callback_data.is_public:
-            answer = question_service.submit_user_choice_public_answer(text_answer_id=callback_data.answer_id,
-                                                                       user_date=date)
+            answer = await question_service.submit_user_choice_public_answer(text_answer_id=callback_data.answer_id,
+                                                                             user_date=date)
         else:
-            answer = question_service.submit_user_choice_answer(text_answer_id=callback_data.answer_id, user_date=date)
+            answer = await question_service.submit_user_choice_answer(text_answer_id=callback_data.answer_id,
+                                                                      user_date=date)
     except DateParsingError:
         return await callback.message.answer(messages.errors.date_parsing_error)
     except QuestionNotFoundError:
@@ -101,7 +104,7 @@ async def answer_choice(callback: CallbackQuery, callback_data: DateChoiceCD, st
 
 
 async def send_question(message: Message, question_service: QuestionService, state: FSMContext, user: User):
-    question = question_service.get_random_question(user)
+    question = await question_service.get_random_question(user)
     if not question:
         return await message.answer(messages.test.question_not_found)
     await message.answer(text=messages.test.question.format(question_text=question.text))
@@ -110,3 +113,4 @@ async def send_question(message: Message, question_service: QuestionService, sta
     else:
         await state.update_data(question_id=question.id, is_public=False)
     await state.set_state(Test.TEXT_ANSWER)
+    return None

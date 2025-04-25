@@ -37,7 +37,7 @@ async def open_answer_count(callback: CallbackQuery):
 @router.callback_query(SettingAnswerCountCD.filter())
 async def set_answer_count(callback: CallbackQuery, callback_data: SettingAnswerCountCD, user_service: UserService):
     count = callback_data.count
-    user_service.set_suggested_answers_count(count)
+    await user_service.set_suggested_answers_count(count)
     await callback.message.answer(messages.settings.answer_count_success.format(count=count),
                                   reply_markup=get_to_settings_kb())
     await callback.answer()
@@ -46,7 +46,7 @@ async def set_answer_count(callback: CallbackQuery, callback_data: SettingAnswer
 @router.callback_query(EnablePublicQuestions.filter())
 async def enable_public_questions(callback: CallbackQuery, callback_data: EnablePublicQuestions,
                                   user_service: UserService):
-    user = user_service.set_enable_public_questions(enable=callback_data.enable)
+    user = await user_service.set_enable_public_questions(enable=callback_data.enable)
     await callback.message.edit_text(
         messages.settings.settings_menu.format(
             answers_count=user.suggested_answers_count,

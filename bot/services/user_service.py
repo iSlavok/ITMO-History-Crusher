@@ -1,59 +1,60 @@
 from typing import Sequence
 
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.repositories import UserRepository
 from bot.models import User
 
 
 class UserService:
-    def __init__(self, session: Session, user_id: int, full_name: str, username: str | None):
+    def __init__(self, session: AsyncSession, user_repo: UserRepository):
         self.session = session
-        self._user_repo = UserRepository(session)
-        self._user: User = self._get_or_create(user_id, username, full_name)
+        self._user_repo = user_repo
+        self._user: User | None = None
 
-    def _get_or_create(self, user_id: int, username: str | None, full_name: str) -> User:
-        user = self._user_repo.get_by_id(user_id)
-        if user:
+    async def get_or_create(self, user_id: int, username: str | None, full_name: str) -> User:
+        user = await self._user_repo.get_by_id(user_id)
+        if not user:
+            user = User(
+                id=user_id,
+                username=username,
+                full_name=full_name,
+            )
+            self._user_repo.add(user)
+            await self.session.commit()
+            await self.session.refresh(user)
+        elif user.username != username or user.full_name != full_name:
             if user.username != username:
                 user.username = username
             if user.full_name != full_name:
                 user.full_name = full_name
-            self.session.commit()
-            self.session.refresh(user)
-            return user
-        user = User(
-            id=user_id,
-            username=username,
-            full_name=full_name,
-        )
-        self._user_repo.add(user)
-        self.session.commit()
-        self.session.refresh(user)
+            await self.session.commit()
+            await self.session.refresh(user)
+        self._user = user
         return user
 
     @property
     def user(self) -> User:
         return self._user
 
-    def set_suggested_answers_count(self, count: int) -> User:
+    async def set_suggested_answers_count(self, count: int) -> User:
         self._user.suggested_answers_count = count
-        self.session.commit()
-        self.session.refresh(self._user)
+        await self.session.commit()
+        await self.session.refresh(self._user)
         return self._user
 
-    def set_enable_public_questions(self, enable: bool) -> User:
+    async def set_enable_public_questions(self, enable: bool) -> User:
         self._user.enable_public_questions = enable
-        self.session.commit()
-        self.session.refresh(self._user)
+        await self.session.commit()
+        await self.session.refresh(self._user)
         return self._user
 
-    def get_users(self, page: int = 1, limit: int = 10) -> Sequence[User]:
+    async def get_users(self, page: int = 1, limit: int = 10) -> Sequence[User]:
         if page < 1:
             page = 1
         skip = (page - 1) * limit
-        users = self._user_repo.list_all(skip=skip, limit=limit)
+        users = await self._user_repo.list_all(skip=skip, limit=limit)
         return users
 
-    def get_users_count(self) -> int:
-        return self._user_repo.get_users_count()
+    async def get_users_count(self) -> int:
+        return await self._user_repo.get_users_count()

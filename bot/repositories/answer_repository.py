@@ -1,5 +1,5 @@
 from sqlalchemy import select, func
-from sqlalchemy.orm import Session
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from bot.enums import AnswerType
 from bot.repositories import BaseRepository
@@ -7,10 +7,10 @@ from bot.models import Answer
 
 
 class AnswerRepository(BaseRepository[Answer]):
-    def __init__(self, session: Session):
+    def __init__(self, session: AsyncSession):
         super().__init__(session, Answer)
 
-    def get_answer_counts_for_weight(self, question_id: int, history_limit: int) -> tuple[list[AnswerType], int]:
+    async def get_answer_counts_for_weight(self, question_id: int, history_limit: int) -> tuple[list[AnswerType], int]:
         stmt_last_answers = (
             select(Answer.type)
             .where(Answer.question_id == question_id)
@@ -23,8 +23,8 @@ class AnswerRepository(BaseRepository[Answer]):
             .where(Answer.question_id == question_id)
         )
 
-        last_answer_types = self.session.scalars(stmt_last_answers).all()
-        total_answers_count = self.session.scalar(stmt_total_count)
+        last_answer_types = (await self.session.scalars(stmt_last_answers)).all()
+        total_answers_count = await self.session.scalar(stmt_total_count)
 
         if total_answers_count is None:
             total_answers_count = 0

@@ -1,17 +1,18 @@
 from typing import Sequence
 
 from sqlalchemy import select, func, or_
-from sqlalchemy.orm import Session, aliased, selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import aliased, selectinload
 
 from bot.models import Question, User
 from bot.repositories import BaseRepository
 
 
 class QuestionRepository(BaseRepository[Question]):
-    def __init__(self, session: Session):
+    def __init__(self, session: AsyncSession):
         super().__init__(session, Question)
 
-    def get_prioritized_questions(self, user: User, high_weight_threshold: float = 8) -> Sequence[Question]:
+    async def get_prioritized_questions(self, user: User, high_weight_threshold: float = 8) -> Sequence[Question]:
         question_alias = aliased(self.model)
 
         question_rank_cte = (
@@ -41,10 +42,11 @@ class QuestionRepository(BaseRepository[Question]):
             .order_by(self.model.id)
         )
 
-        return self.session.scalars(statement).all()
+        result = await self.session.scalars(statement)
+        return result.all()
 
-    def get_user_questions_paginated_with_answers(self, user: User, skip: int = 0,
-                                                  limit: int = 10) -> Sequence[Question]:
+    async def get_user_questions_paginated_with_answers(self, user: User, skip: int = 0,
+                                                        limit: int = 10) -> Sequence[Question]:
         statement = (
             select(self.model)
             .where(self.model.user_id == user.id)
@@ -55,16 +57,17 @@ class QuestionRepository(BaseRepository[Question]):
             .offset(skip)
             .limit(limit)
         )
-        return self.session.scalars(statement).all()
+        result = await self.session.scalars(statement)
+        return result.all()
 
-    def get_user_questions_count(self, user: User) -> int:
+    async def get_user_questions_count(self, user: User) -> int:
         statement = (
             select(func.count(self.model.id))
             .where(self.model.user == user)
         )
-        return self.session.scalar(statement) or 0
+        return await self.session.scalar(statement) or 0
 
-    def get_by_id_and_user(self, question_id: int, user: User) -> Question | None:
+    async def get_by_id_and_user(self, question_id: int, user: User) -> Question | None:
         statement = (
             select(self.model)
             .where(
@@ -72,4 +75,4 @@ class QuestionRepository(BaseRepository[Question]):
                 self.model.user == user
             )
         )
-        return self.session.scalar(statement)
+        return await self.session.scalar(statement)

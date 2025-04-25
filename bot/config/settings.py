@@ -1,3 +1,5 @@
+import os
+
 import yaml
 from pathlib import Path
 
@@ -108,6 +110,18 @@ class Messages(BaseModel):
     adminka: AdminkaMessages
 
 
+class EnvConfig(BaseModel):
+    DB_DRIVER: str = os.getenv("DB_DRIVER")
+    DB_HOST: str = os.getenv("DB_HOST")
+    DB_PORT: int = int(os.getenv("DB_PORT"))
+    DB_NAME: str = os.getenv("DB_NAME")
+    DB_USER: str = os.getenv("DB_USER")
+    DB_PASS: str = os.getenv("DB_PASS")
+    REDIS_HOST: str = os.getenv("REDIS_HOST")
+    REDIS_PORT: int = int(os.getenv("REDIS_PORT"))
+    BOT_TOKEN: str = os.getenv("BOT_TOKEN")
+
+
 def load_config(path: str = "bot/config/config.yaml") -> Config:
     with open(Path(path), encoding="utf-8") as f:
         raw_config = yaml.safe_load(f)
@@ -120,5 +134,10 @@ def load_messages(path: str = "bot/config/messages.yaml") -> Messages:
     return Messages(**raw_config)
 
 
+def load_env_config() -> EnvConfig:
+    return EnvConfig()
+
+
 config = load_config()
 messages = load_messages()
+env_config = load_env_config()

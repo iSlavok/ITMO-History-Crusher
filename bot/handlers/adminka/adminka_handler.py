@@ -33,12 +33,12 @@ async def adminka_menu(event: Message | CallbackQuery, state: FSMContext):
     F.reply_to_message,
 )
 async def mailing(message: Message, user_service: UserService):
-    total_count = user_service.get_users_count()
+    total_count = await user_service.get_users_count()
     total_pages = (total_count // 100) + (1 if total_count % 100 > 0 else 0)
     await message.answer("Рассылка начата")
     good = 0
     for page in range(1, total_pages + 1):
-        users = user_service.get_users(page=page, limit=100)
+        users = await user_service.get_users(page=page, limit=100)
         for user in users:
             with suppress(Exception):
                 print(user)

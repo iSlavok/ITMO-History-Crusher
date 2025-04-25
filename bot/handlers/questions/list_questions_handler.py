@@ -24,8 +24,8 @@ router = Router(name="list_questions_router")
 )
 async def list_questions_open(event: Message | CallbackQuery, question_service: QuestionService, user: User):
     message: Message = event.message if isinstance(event, CallbackQuery) else event
-    questions = question_service.get_questions(user, page=1, limit=10)
-    total_count = question_service.get_questions_count(user)
+    questions = await question_service.get_questions(user, page=1, limit=10)
+    total_count = await question_service.get_questions_count(user)
     total_pages = (total_count // 10) + (1 if total_count % 10 > 0 else 0)
     await message.answer(
         get_question_list_text(questions),
@@ -41,8 +41,8 @@ async def list_questions_open(event: Message | CallbackQuery, question_service: 
 )
 async def list_questions_page(callback: CallbackQuery, callback_data: ListQuestionsPageCD,
                               question_service: QuestionService, user: User):
-    questions = question_service.get_questions(user, page=callback_data.page, limit=10)
-    total_count = question_service.get_questions_count(user)
+    questions = await question_service.get_questions(user, page=callback_data.page, limit=10)
+    total_count = await question_service.get_questions_count(user)
     total_pages = (total_count // 10) + (1 if total_count % 10 > 0 else 0)
     await callback.message.edit_text(
         get_question_list_text(questions, skip_count=(callback_data.page - 1) * 10),
