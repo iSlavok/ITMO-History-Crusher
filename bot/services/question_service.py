@@ -89,13 +89,13 @@ class QuestionService:
     async def _submit_answer_and_update_weight(self, question: Question, raw_user_input: str, user_date: PartialDate,
                                                answer_type: AnswerType, answer_id: int = None) -> Answer:
         if answer_id:
-            answer = await self.answer_repo.get_by_id(answer_id)
+            answer = await self.answer_repo.get_with_question(answer_id)
             if answer is None:
                 raise AnswerNotFoundError
             answer.type = answer_type
         else:
             answer = Answer(
-                question_id=question.id,
+                question=question,
                 text=raw_user_input,
                 year=user_date.year,
                 month=user_date.month,
@@ -170,7 +170,7 @@ class QuestionService:
                                                            user_date=user_date, answer_type=answer_type)
 
     async def submit_user_choice_public_answer(self, text_answer_id: int, user_date: PartialDate) -> PublicAnswer:
-        answer = await self.public_answer_repo.get_by_id(text_answer_id)
+        answer = await self.public_answer_repo.get_with_question(text_answer_id)
         if answer is None:
             raise AnswerNotFoundError
         question = answer.question
@@ -182,7 +182,7 @@ class QuestionService:
         return answer
 
     async def submit_user_choice_answer(self, text_answer_id: int, user_date: PartialDate) -> Answer:
-        answer = await self.answer_repo.get_by_id(text_answer_id)
+        answer = await self.answer_repo.get_with_question(text_answer_id)
         if answer is None:
             raise AnswerNotFoundError
         question = answer.question

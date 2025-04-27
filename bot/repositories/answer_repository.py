@@ -1,5 +1,6 @@
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from bot.enums import AnswerType
 from bot.repositories import BaseRepository
@@ -30,3 +31,12 @@ class AnswerRepository(BaseRepository[Answer]):
             total_answers_count = 0
 
         return list(last_answer_types), total_answers_count
+
+    async def get_with_question(self, answer_id: int) -> Answer | None:
+        stmt = (
+            select(Answer)
+            .where(Answer.id == answer_id)
+            .options(selectinload(Answer.question))
+        )
+        result = await self.session.execute(stmt)
+        return result.scalars().first()

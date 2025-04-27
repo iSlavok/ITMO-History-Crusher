@@ -41,7 +41,7 @@ async def text_input(message: Message, state: FSMContext, question_text: str):
 )
 async def answer_input(message: Message, state: FSMContext, question_service: QuestionService, answer_text: str):
     try:
-        answer_date = await question_service.parse_date_string(answer_text)
+        answer_date = question_service.parse_date_string(answer_text)
     except DateParsingError:
         return await message.answer(messages.errors.date_parsing_error)
     data = await state.get_data()
