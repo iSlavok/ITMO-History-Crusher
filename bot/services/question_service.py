@@ -105,7 +105,7 @@ class QuestionService:
             self.answer_repo.add(answer)
             await self.session.flush([answer])
 
-        last_types, total_count = self.answer_repo.get_answer_counts_for_weight(
+        last_types, total_count = await self.answer_repo.get_answer_counts_for_weight(
             question_id=question.id,
             history_limit=ANSWERS_HISTORY_LIMIT
         )

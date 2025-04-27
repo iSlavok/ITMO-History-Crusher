@@ -9,7 +9,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-RUN mkdir -p /data
 COPY alembic/ /app/alembic/
 COPY bot/ /app/bot/
 COPY alembic.ini main.py /app/
