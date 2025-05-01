@@ -1,4 +1,4 @@
-from .inline import (
+from .user_keyboards import (
     get_main_kb,
     get_to_main_kb,
     get_distractors_kb,
@@ -16,7 +16,7 @@ from .questions_keyboards import (
     get_list_public_questions_kb,
     get_delete_public_question_confirm_kb,
 )
-from .adminka import get_adminka_kb, get_to_adminka_kb, get_users_list_kb
+from .adminka_keyboards import get_adminka_kb, get_to_adminka_kb, get_users_list_kb
 
 __all__ = [
     "get_main_kb",

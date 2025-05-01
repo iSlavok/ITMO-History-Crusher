@@ -30,16 +30,18 @@ class QuestionService:
         self.public_answer_repo = public_answer_repo
 
     async def get_random_question(self, user: User) -> Question | PublicQuestion | None:
-        user_questions = await self.question_repo.get_prioritized_questions(user=user)
-        if not user_questions:
-            return None
-        user_questions_weights = [question.weight for question in user_questions]
+        user_questions = await self.question_repo.get_prioritized_questions(user=user) or []
+        public_questions = []
         if user.enable_public_questions:
-            public_questions = await self.public_question_repo.list_all(limit=1000)
-            questions = list(user_questions) + list(public_questions)
-            weights = user_questions_weights + [10] * len(public_questions)
-            return random.choices(questions, weights=weights, k=1)[0]
-        return random.choices(user_questions, weights=user_questions_weights, k=1)[0]
+            public_questions = await self.public_question_repo.list_all(limit=1000) or []
+        questions = user_questions + public_questions
+        if not questions:
+            return None
+        weights = (
+                [q.weight for q in user_questions] +
+                [10] * len(public_questions)
+        )
+        return random.choices(questions, weights=weights, k=1)[0]
 
     @staticmethod
     def parse_date_string(raw_string: str) -> PartialDate:
