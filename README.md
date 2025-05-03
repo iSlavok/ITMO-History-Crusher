@@ -2,7 +2,7 @@
 
 ## Overview
 
-This project is a Telegram bot developed using Python and the `aiogram` framework. It's designed as a personal tool to help users memorize historical dates through interactive quizzes.
+This project is a Telegram bot developed using Python and the `aiogram` framework. It's designed as a personal tool to help users memorize historical dates through interactive quizzes. It also includes a simple real-time PvP 'Fight' mode where two users compete to answer date questions faster and more accurately.
 
 **Important Context:** This bot was created as a student project for a history course at **ITMO University**. Its primary purpose is to serve as a **demonstration of my coding skills** and practices in areas such as:
 
@@ -19,21 +19,30 @@ This project is a Telegram bot developed using Python and the `aiogram` framewor
 
 *   **User Management:** Basic user registration upon first interaction. Admin role differentiation.
 *   **Personal Questions:** Users can create their own questions with associated dates (Year, Month-Year, Day-Month-Year).
-*   **Quiz Mode:**
-    *   Fetches random questions (prioritizing user's own questions, considering answer history/weight).
+*   **Quiz Mode (`/test`):**
+    *   Fetches random questions (prioritizing user's own questions, considering answer history/weight, optionally including public questions).
     *   Accepts text-based answers and attempts to parse the date.
     *   If the text answer is incorrect, it generates multiple-choice options (distractors) including the correct answer.
     *   Adapts question `weight` based on user's answer history (using concepts like boosting for newer/less-answered questions).
-*   **Public Questions:** Admins can create "public" questions available to all users who opt-in.
+*   **PvP Fight Mode:**
+    *   Players can initiate a fight and wait for an opponent.
+    *   Matchmaking places waiting players into a 1v1 session if another player joins within the timeout.
+    *   Rounds present a random *public* date question to both players simultaneously after a short countdown.
+    *   Players answer via text message within a time limit (invalid dates are rejected, messages are deleted).
+    *   Answers are scored based on proximity to the correct date (closer = higher score).
+    *   The player with the lower score takes damage proportional to the score difference for that round.
+    *   The game continues until one player's health is depleted or a mutual timeout occurs in a round.
+    *   Uses asynchronous timers for matchmaking, round countdowns, and answer deadlines.
+*   **Public Questions:** Admins can create "public" questions available to all users who opt-in (used in both `/test` and `/fight`).
 *   **Question Management:** Users can list and delete their own questions. Admins can manage public questions (CRUD).
 *   **User Settings:**
-    *   Customize the number of multiple-choice options presented.
-    *   Enable/disable receiving public questions during quizzes.
+    *   Customize the number of multiple-choice options presented in `/test` mode.
+    *   Enable/disable receiving public questions during quizzes (`/test`).
 *   **Admin Panel:**
     *   View a list of registered users (paginated).
     *   Manage public questions.
     *   Basic user mailing functionality (send a message to all registered users).
-*   **State Management:** Uses `aiogram`'s Finite State Machine (FSM) persisted in Redis for multi-step operations like question creation or testing flow.
+*   **State Management:** Uses `aiogram`'s Finite State Machine (FSM) persisted in Redis for multi-step operations like question creation or the standard testing flow. (Fight mode uses a separate in-memory manager).
 *   **Database Interaction:** Uses SQLAlchemy ORM with an async driver (`asyncpg`) for interacting with a PostgreSQL database. Repositories pattern is used for data access logic.
 *   **Deployment Ready:** Includes `Dockerfile` and `docker-compose.yml` for easy containerized deployment. GitHub Actions workflow automates Docker image building and pushing to GitHub Container Registry (GHCR) on release.
 

@@ -1,5 +1,6 @@
 import asyncio
 import uuid
+from datetime import date
 from typing import Callable
 
 from aiogram import Bot
@@ -213,9 +214,32 @@ class FightSession:
         return user_id in (self.player1.id, self.player2.id)
 
     def _calculate_score(self, player_answer: PartialDate) -> int:
-        if player_answer == self.current_question.correct_answer_date:
-            return 1000
-        return 0
+        correct = self.current_question.correct_answer_date
+
+        if (player_answer.year == correct.year
+                and (correct.month is None or player_answer.month == correct.month)
+                and (correct.day is None or player_answer.day == correct.day)):
+            return 5000
+
+        if correct.day is not None and player_answer.day is not None:
+            d_corr = date(correct.year, correct.month, correct.day)
+            d_user = date(player_answer.year, player_answer.month, player_answer.day)
+            delta_years = abs((d_corr - d_user).days) / 365.2425
+        elif correct.month is not None and player_answer.month is not None:
+            total_corr = correct.year * 12 + (correct.month - 1)
+            total_user = player_answer.year * 12 + (player_answer.month - 1)
+            delta_years = abs(total_corr - total_user) / 12.0
+        else:
+            delta_years = abs(correct.year - player_answer.year)
+
+        if correct.month is not None and player_answer.month is None:
+            delta_years += 0.5
+        if correct.day is not None and player_answer.day is None:
+            delta_years += 1 / 24
+
+        if delta_years > 100:
+            return 0
+        return int(round(5000 * (1 - delta_years / 100)))
 
     def _cleanup_session(self):
         if self.round_timer_task:
