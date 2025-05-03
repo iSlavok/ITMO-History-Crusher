@@ -1,16 +1,16 @@
 from aiogram.fsm.state import StatesGroup, State
 
 
-class CreateQuestion(StatesGroup):
+class CreateQuestionStates(StatesGroup):
     TEXT = State()
     ANSWER = State()
 
 
-class DeleteQuestion(StatesGroup):
+class DeleteQuestionStates(StatesGroup):
     ID = State()
     CONFIRM = State()
 
 
-class Test(StatesGroup):
+class TestStates(StatesGroup):
     TEXT_ANSWER = State()
     CHOICE_ANSWER = State()

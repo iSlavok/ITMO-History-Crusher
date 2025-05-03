@@ -8,7 +8,7 @@ from bot.config import messages
 from bot.keyboards import get_to_public_questions_kb, get_delete_public_question_confirm_kb
 from bot.services import QuestionService
 from bot.services.exceptions import QuestionNotFoundError
-from bot.states import DeletePublicQuestion
+from bot.states import DeletePublicQuestionStates
 
 router = Router(name="delete_public_question_router")
 
@@ -19,14 +19,14 @@ async def delete_question_id_request(event: Message | CallbackQuery, state: FSMC
     message: Message = event.message if isinstance(event, CallbackQuery) else event
     await message.answer(messages.questions.delete_public_question.id_request,
                          reply_markup=get_to_public_questions_kb())
-    await state.set_state(DeletePublicQuestion.ID)
+    await state.set_state(DeletePublicQuestionStates.ID)
     if isinstance(event, CallbackQuery):
         await event.answer()
 
 
 @router.message(
     F.text.func(int).as_("question_id"),
-    DeletePublicQuestion.ID,
+    DeletePublicQuestionStates.ID,
     flags={"services": ["question"]},
 )
 async def delete_question_id(message: Message, state: FSMContext, question_id: int, question_service: QuestionService):
@@ -36,13 +36,13 @@ async def delete_question_id(message: Message, state: FSMContext, question_id: i
         return await message.answer(messages.errors.question_not_found)
     await message.answer(messages.questions.delete_public_question.delete_confirm.format(question_text=question.text),
                          reply_markup=get_delete_public_question_confirm_kb(question.id))
-    await state.set_state(DeletePublicQuestion.CONFIRM)
+    await state.set_state(DeletePublicQuestionStates.CONFIRM)
     return None
 
 
 @router.callback_query(
     DeletePublicQuestionCD.filter(),
-    DeletePublicQuestion.CONFIRM,
+    DeletePublicQuestionStates.CONFIRM,
     flags={"services": ["question"]},
 )
 async def delete_question_confirm(callback: CallbackQuery, callback_data: DeletePublicQuestionCD, state: FSMContext,
@@ -56,6 +56,6 @@ async def delete_question_confirm(callback: CallbackQuery, callback_data: Delete
         messages.questions.delete_public_question.delete_success.format(question_text=question.text),
         reply_markup=get_to_public_questions_kb()
     )
-    await state.set_state(DeletePublicQuestion.ID)
+    await state.set_state(DeletePublicQuestionStates.ID)
     await callback.answer()
     return None

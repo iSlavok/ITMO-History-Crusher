@@ -9,7 +9,7 @@ from bot.middlewares import ServicesMiddleware
 from bot.models import User
 from bot.services import QuestionService
 from bot.services.exceptions import DateParsingError
-from bot.states import CreateQuestion
+from bot.states import CreateQuestionStates
 
 router = Router(name="create_question_router")
 
@@ -22,24 +22,24 @@ async def start(event: Message | CallbackQuery, state: FSMContext):
     message: Message = event.message if isinstance(event, CallbackQuery) else event
     await message.answer(messages.questions.create_question.question_text_request,
                          reply_markup=get_to_questions_kb())
-    await state.set_state(CreateQuestion.TEXT)
+    await state.set_state(CreateQuestionStates.TEXT)
     if isinstance(event, CallbackQuery):
         await event.answer()
 
 
 @router.message(
     F.text.as_("question_text"),
-    CreateQuestion.TEXT,
+    CreateQuestionStates.TEXT,
 )
 async def text_input(message: Message, state: FSMContext, question_text: str):
     await message.answer(messages.questions.create_question.question_date_request.format(question_text=question_text))
     await state.update_data(create_question_text=question_text)
-    await state.set_state(CreateQuestion.ANSWER)
+    await state.set_state(CreateQuestionStates.ANSWER)
 
 
 @router.message(
     F.text.as_("answer_text"),
-    CreateQuestion.ANSWER,
+    CreateQuestionStates.ANSWER,
     flags={"services": ["question"]},
 )
 async def answer_input(message: Message, state: FSMContext, question_service: QuestionService, user: User,
@@ -54,5 +54,5 @@ async def answer_input(message: Message, state: FSMContext, question_service: Qu
     await message.answer(
         messages.questions.create_question.success_created.format(date=answer_date, question_text=question_text),
         reply_markup=get_to_questions_kb())
-    await state.set_state(CreateQuestion.TEXT)
+    await state.set_state(CreateQuestionStates.TEXT)
     return None

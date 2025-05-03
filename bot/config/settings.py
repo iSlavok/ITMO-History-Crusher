@@ -1,5 +1,4 @@
 import os
-
 import yaml
 from pathlib import Path
 
@@ -13,12 +12,18 @@ class Config(BaseModel):
     max_weight_during_boost: float = 15.0
     min_final_weight: float = 1.0
 
+    fight_waiting_player_timeout: int = 60
+    fight_round_answer_time: int = 20
+    fight_round_countdown_time: int = 5
+    fight_starting_health: int = 5000
+
 
 class Buttons(BaseModel):
     main: str
     adminka: str
     back: str
     test: str
+    fight: str
     questions: str
     settings: str
 
@@ -89,6 +94,21 @@ class QuestionsMessages(BaseModel):
     delete_public_question: DeleteQuestionMessages
 
 
+class FightMessages(BaseModel):
+    wait_join: str
+    wait_timeout: str
+    game_start: str
+    round_start: str
+    round: str
+    round_answer: str
+    round_win: str
+    round_lose: str
+    round_draw: str
+    game_win: str
+    game_lose: str
+    game_draw: str
+
+
 class SettingsMessages(BaseModel):
     settings_menu: str
     answer_count_request: str
@@ -106,6 +126,7 @@ class Messages(BaseModel):
     errors: ErrorMessages
     test: TestMessages
     questions: QuestionsMessages
+    fight: FightMessages
     settings: SettingsMessages
     adminka: AdminkaMessages
 

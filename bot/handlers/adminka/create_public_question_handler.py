@@ -7,7 +7,7 @@ from bot.config import messages
 from bot.keyboards import get_to_public_questions_kb
 from bot.services import QuestionService
 from bot.services.exceptions import DateParsingError
-from bot.states import CreatePublicQuestion
+from bot.states import CreatePublicQuestionStates
 
 router = Router(name="create_public_question_router")
 
@@ -18,25 +18,25 @@ async def start(event: Message | CallbackQuery, state: FSMContext):
     message: Message = event.message if isinstance(event, CallbackQuery) else event
     await message.answer(messages.questions.create_public_question.question_text_request,
                          reply_markup=get_to_public_questions_kb())
-    await state.set_state(CreatePublicQuestion.TEXT)
+    await state.set_state(CreatePublicQuestionStates.TEXT)
     if isinstance(event, CallbackQuery):
         await event.answer()
 
 
 @router.message(
     F.text.as_("question_text"),
-    CreatePublicQuestion.TEXT,
+    CreatePublicQuestionStates.TEXT,
 )
 async def text_input(message: Message, state: FSMContext, question_text: str):
     await message.answer(
         messages.questions.create_public_question.question_date_request.format(question_text=question_text))
     await state.update_data(create_question_text=question_text)
-    await state.set_state(CreatePublicQuestion.ANSWER)
+    await state.set_state(CreatePublicQuestionStates.ANSWER)
 
 
 @router.message(
     F.text.as_("answer_text"),
-    CreatePublicQuestion.ANSWER,
+    CreatePublicQuestionStates.ANSWER,
     flags={"services": ["question"]},
 )
 async def answer_input(message: Message, state: FSMContext, question_service: QuestionService, answer_text: str):
@@ -50,5 +50,5 @@ async def answer_input(message: Message, state: FSMContext, question_service: Qu
     await message.answer(
         messages.questions.create_public_question.success_created.format(date=answer_date, question_text=question_text),
         reply_markup=get_to_public_questions_kb())
-    await state.set_state(CreatePublicQuestion.TEXT)
+    await state.set_state(CreatePublicQuestionStates.TEXT)
     return None

@@ -43,6 +43,12 @@ class QuestionService:
         )
         return random.choices(questions, weights=weights, k=1)[0]
 
+    async def get_random_public_question(self) -> PublicQuestion | None:
+        public_questions = await self.public_question_repo.list_all(limit=1000) or []
+        if not public_questions:
+            return None
+        return random.choice(public_questions)
+
     @staticmethod
     def parse_date_string(raw_string: str) -> PartialDate:
         raw_string = raw_string.strip()

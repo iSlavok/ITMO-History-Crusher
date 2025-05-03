@@ -14,7 +14,7 @@ from bot.models import User, PublicQuestion, Question
 from bot.schemas import PartialDate
 from bot.services import QuestionService
 from bot.services.exceptions import DateParsingError, QuestionNotFoundError, AnswerNotFoundError
-from bot.states import Test
+from bot.states import TestStates
 
 router = Router(name="test_router")
 
@@ -39,7 +39,7 @@ async def start(event: Message | CallbackQuery, question_service: QuestionServic
 
 @router.message(
     F.text.as_("answer_text"),
-    Test.TEXT_ANSWER,
+    TestStates.TEXT_ANSWER,
     flags={"services": ["question"]},
 )
 async def answer_input(message: Message, state: FSMContext, question_service: QuestionService, user: User,
@@ -66,14 +66,14 @@ async def answer_input(message: Message, state: FSMContext, question_service: Qu
     await message.answer(messages.test.incorrect_text_answer,
                          reply_markup=get_distractors_kb(distractors, answer_id=answer.id,  # type: ignore
                                                          is_public=is_public))
-    await state.set_state(Test.CHOICE_ANSWER)
+    await state.set_state(TestStates.CHOICE_ANSWER)
     await state.update_data(answer_id=answer.id)
     return None
 
 
 @router.callback_query(
     DateChoiceCD.filter(),
-    Test.CHOICE_ANSWER,
+    TestStates.CHOICE_ANSWER,
     flags={"services": ["question"]},
 )
 async def answer_choice(callback: CallbackQuery, callback_data: DateChoiceCD, state: FSMContext,
@@ -112,5 +112,5 @@ async def send_question(message: Message, question_service: QuestionService, sta
         await state.update_data(question_id=question.id, is_public=True)
     else:
         await state.update_data(question_id=question.id, is_public=False)
-    await state.set_state(Test.TEXT_ANSWER)
+    await state.set_state(TestStates.TEXT_ANSWER)
     return None

@@ -32,6 +32,7 @@ async def start_main_bot():
     dp.include_router(test_router)
     dp.include_router(user_settings_router)
     dp.include_router(adminka_router)
+    dp.include_router(fight_router)
 
     commands = [
         BotCommand(command="main", description="В главное меню"),

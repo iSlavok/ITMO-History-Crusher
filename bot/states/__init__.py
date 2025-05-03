@@ -1,10 +1,10 @@
-from .user_states import CreateQuestion, DeleteQuestion, Test
-from .admin_states import CreatePublicQuestion, DeletePublicQuestion
+from .user_states import CreateQuestionStates, DeleteQuestionStates, TestStates
+from .admin_states import CreatePublicQuestionStates, DeletePublicQuestionStates
 
 __all__ = [
-    "CreateQuestion",
-    "DeleteQuestion",
-    "Test",
-    "CreatePublicQuestion",
-    "DeletePublicQuestion",
+    "CreateQuestionStates",
+    "DeleteQuestionStates",
+    "TestStates",
+    "CreatePublicQuestionStates",
+    "DeletePublicQuestionStates",
 ]

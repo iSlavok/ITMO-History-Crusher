@@ -9,7 +9,7 @@ from bot.keyboards import get_delete_question_confirm_kb, get_to_questions_kb
 from bot.models import User
 from bot.services import QuestionService
 from bot.services.exceptions import QuestionNotFoundError
-from bot.states import DeleteQuestion
+from bot.states import DeleteQuestionStates
 
 router = Router(name="delete_question_router")
 
@@ -19,14 +19,14 @@ router = Router(name="delete_question_router")
 async def delete_question_id_request(event: Message | CallbackQuery, state: FSMContext):
     message: Message = event.message if isinstance(event, CallbackQuery) else event
     await message.answer(messages.questions.delete_question.id_request, reply_markup=get_to_questions_kb())
-    await state.set_state(DeleteQuestion.ID)
+    await state.set_state(DeleteQuestionStates.ID)
     if isinstance(event, CallbackQuery):
         await event.answer()
 
 
 @router.message(
     F.text.func(int).as_("question_id"),
-    DeleteQuestion.ID,
+    DeleteQuestionStates.ID,
     flags={"services": ["question"]},
 )
 async def delete_question_id(message: Message, state: FSMContext, question_id: int, question_service: QuestionService,
@@ -37,13 +37,13 @@ async def delete_question_id(message: Message, state: FSMContext, question_id: i
         return await message.answer(messages.errors.question_not_found)
     await message.answer(messages.questions.delete_question.delete_confirm.format(question_text=question.text),
                          reply_markup=get_delete_question_confirm_kb(question.id))
-    await state.set_state(DeleteQuestion.CONFIRM)
+    await state.set_state(DeleteQuestionStates.CONFIRM)
     return None
 
 
 @router.callback_query(
     DeleteQuestionCD.filter(),
-    DeleteQuestion.CONFIRM,
+    DeleteQuestionStates.CONFIRM,
     flags={"services": ["question"]},
 )
 async def delete_question_confirm(callback: CallbackQuery, callback_data: DeleteQuestionCD, state: FSMContext,
@@ -57,6 +57,6 @@ async def delete_question_confirm(callback: CallbackQuery, callback_data: Delete
         messages.questions.delete_question.delete_success.format(question_text=question.text),
         reply_markup=get_to_questions_kb()
     )
-    await state.set_state(DeleteQuestion.ID)
+    await state.set_state(DeleteQuestionStates.ID)
     await callback.answer()
     return None
