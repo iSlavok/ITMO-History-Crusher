@@ -24,7 +24,7 @@ This project is a Telegram bot developed using Python and the `aiogram` framewor
     *   Accepts text-based answers and attempts to parse the date.
     *   If the text answer is incorrect, it generates multiple-choice options (distractors) including the correct answer.
     *   Adapts question `weight` based on user's answer history (using concepts like boosting for newer/less-answered questions).
-*   **PvP Fight Mode:**
+*   **PvP Fight Mode (`/fight`):**
     *   Players can initiate a fight and wait for an opponent.
     *   Matchmaking places waiting players into a 1v1 session if another player joins within the timeout.
     *   Rounds present a random *public* date question to both players simultaneously after a short countdown.
@@ -34,11 +34,11 @@ This project is a Telegram bot developed using Python and the `aiogram` framewor
     *   The game continues until one player's health is depleted or a mutual timeout occurs in a round.
     *   Uses asynchronous timers for matchmaking, round countdowns, and answer deadlines.
 *   **Public Questions:** Admins can create "public" questions available to all users who opt-in (used in both `/test` and `/fight`).
-*   **Question Management:** Users can list and delete their own questions. Admins can manage public questions (CRUD).
-*   **User Settings:**
+*   **Question Management (`/questions`):** Users can list and delete their own questions. Admins can manage public questions (CRUD).
+*   **User Settings (`/settings`):**
     *   Customize the number of multiple-choice options presented in `/test` mode.
     *   Enable/disable receiving public questions during quizzes (`/test`).
-*   **Admin Panel:**
+*   **Admin Panel (`/adminka`):**
     *   View a list of registered users (paginated).
     *   Manage public questions.
     *   Basic user mailing functionality (send a message to all registered users).
