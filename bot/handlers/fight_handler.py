@@ -1,5 +1,5 @@
 from aiogram import Router, F, Bot
-from aiogram.filters import or_f
+from aiogram.filters import or_f, Command
 from aiogram.types import Message, CallbackQuery
 
 from bot.config import messages, config
@@ -18,15 +18,16 @@ router.callback_query.filter(or_f(RoleFilter(UserRole.USER), RoleFilter(UserRole
 
 
 @router.callback_query(F.data == "fight")
-async def fight_button_handler(callback: CallbackQuery, bot: Bot, user: User):
+@router.message(Command("fight"))
+async def fight_button_handler(event: Message | CallbackQuery, bot: Bot, user: User):
+    message: Message = event.message if isinstance(event, CallbackQuery) else event
     session = await fight_manager.add_waiting_player(user, bot)
     if session is not None:
         await session.start_game(bot)
-        await callback.answer()
-        return None
-    await callback.message.answer(messages.fight.wait_join.format(time=config.fight_waiting_player_timeout))
-    await callback.answer()
-    return None
+    else:
+        await message.answer(messages.fight.wait_join.format(time=config.fight_waiting_player_timeout))
+    if isinstance(event, CallbackQuery):
+        await event.answer()
 
 
 @router.message(F.text.as_("answer_text"))
