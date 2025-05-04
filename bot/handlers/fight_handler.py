@@ -9,17 +9,21 @@ from bot.models import User
 from bot.services import FightManager, QuestionService
 from bot.services.exceptions import DateParsingError
 
-fight_manager = FightManager()
-
 router = Router(name="fight_router")
 
 router.message.filter(or_f(RoleFilter(UserRole.USER), RoleFilter(UserRole.ADMIN)))
 router.callback_query.filter(or_f(RoleFilter(UserRole.USER), RoleFilter(UserRole.ADMIN)))
 
 
-@router.callback_query(F.data == "fight")
-@router.message(Command("fight"))
-async def fight_button_handler(event: Message | CallbackQuery, bot: Bot, user: User):
+@router.callback_query(
+    F.data == "fight",
+    flags={"services": ["fight"]},
+)
+@router.message(
+    Command("fight"),
+    flags={"services": ["fight"]},
+)
+async def fight_button_handler(event: Message | CallbackQuery, bot: Bot, user: User, fight_manager: FightManager):
     message: Message = event.message if isinstance(event, CallbackQuery) else event
     session = await fight_manager.add_waiting_player(user, bot)
     if session is not None:
@@ -30,8 +34,11 @@ async def fight_button_handler(event: Message | CallbackQuery, bot: Bot, user: U
         await event.answer()
 
 
-@router.message(F.text.as_("answer_text"))
-async def game_message_handler(message: Message, bot: Bot, answer_text: str):
+@router.message(
+    F.text.as_("answer_text"),
+    flags={"services": ["fight"]},
+)
+async def game_message_handler(message: Message, bot: Bot, answer_text: str, fight_manager: FightManager):
     user_id = message.from_user.id
     session = fight_manager.get_session_by_player(user_id)
     if session is None:

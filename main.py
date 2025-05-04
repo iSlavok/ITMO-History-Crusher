@@ -13,6 +13,7 @@ from bot.config import env_config
 from bot.database import init_db
 from bot.handlers import *
 from bot.middlewares import UserMiddleware, ServicesMiddleware
+from bot.services import FightManager
 
 
 async def start_main_bot():
@@ -23,9 +24,11 @@ async def start_main_bot():
 
     dp.message.filter(F.chat.type == ChatType.PRIVATE)
 
+    fight_manager = FightManager()
+
     dp.update.outer_middleware(UserMiddleware())
-    dp.message.middleware.register(ServicesMiddleware())
-    dp.callback_query.middleware.register(ServicesMiddleware())
+    dp.message.middleware.register(ServicesMiddleware(fight_manager))
+    dp.callback_query.middleware.register(ServicesMiddleware(fight_manager))
 
     dp.include_router(user_main_router)
     dp.include_router(questions_router)

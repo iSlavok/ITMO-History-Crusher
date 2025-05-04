@@ -54,3 +54,9 @@ class FightManager:
     def remove_session(self, session_id: str):
         if session_id in self.active_sessions:
             del self.active_sessions[session_id]
+
+    def leave_waiting_player(self, player_id: int):
+        if self.waiting_player is not None and self.waiting_player.id == player_id:
+            self.waiting_player = None
+            if self.waiting_task is not None:
+                self.waiting_task.cancel()

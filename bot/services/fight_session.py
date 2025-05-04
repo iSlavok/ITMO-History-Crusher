@@ -119,10 +119,14 @@ class FightSession:
 
         if self.player1.current_score < self.player2.current_score:
             self.player1.health -= damage
+            if self.player1.health < 0:
+                self.player1.health = 0
             winner = self.player2
             loser = self.player1
         elif self.player2.current_score < self.player1.current_score:
             self.player2.health -= damage
+            if self.player2.health < 0:
+                self.player2.health = 0
             winner = self.player1
             loser = self.player2
         else:
@@ -247,3 +251,16 @@ class FightSession:
         if self.countdown_task:
             self.countdown_task.cancel()
         self._on_game_end(self.session_id)
+
+    async def leave_player(self, user_id: int, bot: Bot):
+        if user_id == self.player1.id:
+            await bot.send_message(self.player2.id, messages.fight.game_win.format(health=self.player2.health,
+                                                                                   opponent_health=self.player1.health))
+            await bot.send_message(self.player2.id, messages.main_menu, reply_markup=get_main_kb())
+        elif user_id == self.player2.id:
+            await bot.send_message(self.player1.id, messages.fight.game_win.format(health=self.player1.health,
+                                                                                   opponent_health=self.player2.health))
+            await bot.send_message(self.player1.id, messages.main_menu, reply_markup=get_main_kb())
+        else:
+            raise ValueError("Player is not in the game")
+        self._cleanup_session()

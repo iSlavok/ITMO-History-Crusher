@@ -5,15 +5,12 @@ from aiogram.types import CallbackQuery, Message
 
 from bot.config import messages
 from bot.keyboards import get_to_questions_kb
-from bot.middlewares import ServicesMiddleware
 from bot.models import User
 from bot.services import QuestionService
 from bot.services.exceptions import DateParsingError
 from bot.states import CreateQuestionStates
 
 router = Router(name="create_question_router")
-
-router.message.middleware.register(ServicesMiddleware())
 
 
 @router.callback_query(F.data == "create_question")
